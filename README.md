@@ -6,7 +6,7 @@ Open `index.html` in a browser to view the responsive public site and its team w
 
 - Public information site, plans, application form and FAQ
 - No student login: applications are open directly from the website
-- Prototype team login (`any email` / access code `nextround`)
+- Team login through Supabase Auth for emails listed in `ADMIN_EMAILS`
 - Applications appear in the team dashboard and are stored in the browser only
 
 ## Before launching publicly
@@ -20,10 +20,28 @@ Open `index.html` in a browser to view the responsive public site and its team w
 1. Open your Supabase project and run the SQL in `supabase/schema.sql` in the SQL editor.
 2. Run `supabase/seed-interview-records.sql` in the SQL editor to import the historical completed interviews.
 3. Create a storage bucket named `payment-proofs` if you want the application proof upload flow to work.
-4. Copy `.env.example` to `.env` and add your project URL and service role key.
+4. Copy `.env.example` to `.env` and add your project URL, anon key, admin emails, and finance admin email. Keep the service role key for server-side seeding only; never use it in `supabase-config.js`.
+   Create those team users in Supabase Dashboard → Authentication → Users before signing in.
 5. Run:
    `SUPABASE_URL=https://your-project.supabase.co SUPABASE_SERVICE_ROLE_KEY=your-key node scripts/seed-supabase.js`
-6. Confirm the app loads data from Supabase by opening the site with `supabase-config.js` configured with the anon key.
+6. Generate the browser config from `.env`:
+   `node scripts/generate-supabase-config.js`
+   This creates the ignored `supabase-config.js` runtime file.
+7. Confirm the app loads data from Supabase by opening the site after generating both files.
+
+## Netlify deployment
+
+The repository does not contain the generated config file or any keys. Netlify creates `supabase-config.js` during deployment.
+
+1. In Netlify, open **Site configuration → Environment variables**.
+2. Add these variables for the **Builds** scope:
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
+   - `ADMIN_EMAILS` (comma-separated emails)
+   - `FINANCE_ADMIN_EMAIL`
+3. Deploy the site. `netlify.toml` runs `node scripts/generate-supabase-config.js` before publishing the project.
+
+Do not add `SUPABASE_SERVICE_ROLE_KEY` to the frontend build. Use that key only locally or in a separate server-side seed command.
 
 For longer login sessions, open Supabase Dashboard → Authentication → Settings and increase the JWT expiry. The app persists the refresh session and automatically refreshes tokens while the browser is open.
 

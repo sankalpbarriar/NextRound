@@ -1,5 +1,6 @@
 .env
 .env.*
+!.env.example
 supabase-config.js
 supabase-config.local.js
 node_modules/
