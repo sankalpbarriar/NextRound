@@ -1,5 +1,7 @@
 .env
 .env.*
+supabase-config.js
+supabase-config.local.js
 node_modules/
 .DS_Store
 Thumbs.db
