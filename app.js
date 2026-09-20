@@ -1,8 +1,25 @@
 const $ = (s) => document.querySelector(s);
-const applications = JSON.parse(localStorage.getItem('nextroundApplications') || '[]');
+
+function readStoredArray(key) {
+  const stored = localStorage.getItem(key);
+  if (!stored) return [];
+
+  try {
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    localStorage.removeItem(key);
+    console.warn(`Cleared invalid local storage value for ${key}.`, error);
+    return [];
+  }
+}
+
+const applications = readStoredArray('nextroundApplications');
 let remoteApplications = [];
 let remoteFinances = null;
 let remoteSchedules = [];
+let applicationPage = 1;
+const applicationsPerPage = 10;
 const save = () => localStorage.setItem('nextroundApplications', JSON.stringify(applications));
 
 const supabaseConfig = window.SUPABASE_CONFIG || {};
@@ -42,6 +59,28 @@ function showToast(message, type = 'info', duration = 3000) {
   }, duration);
 }
 
+function captureClientError(operation, error, metadata = {}) {
+  const entry = {
+    timestamp: new Date().toISOString(),
+    operation,
+    code: error?.code || (error?.status ? `HTTP_${error.status}` : 'CLIENT_ERROR'),
+    status: error?.status || null,
+    message: error?.message || String(error),
+    details: error?.details || null,
+    ...metadata
+  };
+
+  console.error('[NextRound error]', entry);
+
+  try {
+    const existing = readStoredArray('nextroundErrorLogs');
+    existing.push(entry);
+    localStorage.setItem('nextroundErrorLogs', JSON.stringify(existing.slice(-20)));
+  } catch (storageError) {
+    console.warn('Could not persist the client error log.', storageError);
+  }
+}
+
 async function supabaseRequest(path, options = {}) {
   if (!supabaseEnabled) return null;
 
@@ -60,9 +99,24 @@ async function supabaseRequest(path, options = {}) {
       ...(options.headers || {})
     }
   });
-  if (!response.ok) throw new Error(`Supabase request failed (${response.status})`);
-  if (response.status === 204) return null;
-  return response.json();
+  if (!response.ok) {
+    const responseText = await response.text();
+    let details = responseText;
+    try {
+      details = responseText ? JSON.parse(responseText) : null;
+    } catch (parseError) {
+      details = responseText;
+    }
+
+    const error = new Error(`Supabase request failed (${response.status})`);
+    error.status = response.status;
+    error.details = details;
+    error.operation = path;
+    throw error;
+  }
+  const responseText = await response.text();
+  if (!responseText.trim()) return null;
+  return JSON.parse(responseText);
 }
 
 function mapApplication(row) {
@@ -525,7 +579,16 @@ function renderApplications() {
   const list = $('#applicationList');
   if (!list) return;
   const websiteApplications = supabaseEnabled ? remoteApplications : applications;
-  const all = websiteApplications;
+  const all = websiteApplications.slice().sort((a, b) => {
+    const dateDifference = new Date(b.created_at || b.createdAt || 0) - new Date(a.created_at || a.createdAt || 0);
+    if (dateDifference) return dateDifference;
+    return Number(b.id || 0) - Number(a.id || 0);
+  });
+  const pageCount = Math.max(1, Math.ceil(all.length / applicationsPerPage));
+  applicationPage = Math.min(applicationPage, pageCount);
+  const pageStart = (applicationPage - 1) * applicationsPerPage;
+  const pageItems = all.slice(pageStart, pageStart + applicationsPerPage);
+  const pagination = $('#applicationPagination');
 
   if ($('#applicationCountBadge')) $('#applicationCountBadge').textContent = all.length;
   if ($('#applicationSubNote')) {
@@ -536,6 +599,7 @@ function renderApplications() {
 
   if (!all.length) {
     list.innerHTML = '<p class="empty-state">New applications from the public form will appear here.</p>';
+    if (pagination) pagination.hidden = true;
     return;
   }
 
@@ -546,7 +610,7 @@ function renderApplications() {
     </div>
   `;
 
-  list.innerHTML = all.slice().reverse().map(a => `
+  list.innerHTML = pageItems.map(a => `
     <article class="application-row">
       <div class="application-heading">
         <strong>${a.name || 'Applicant'}</strong>
@@ -568,6 +632,23 @@ function renderApplications() {
       </dl>
     </article>
   `).join('');
+
+  if (pagination) {
+    pagination.hidden = pageCount <= 1;
+    pagination.innerHTML = `
+      <button type="button" data-application-page="previous" ${applicationPage === 1 ? 'disabled' : ''}>Previous</button>
+      <span>Page ${applicationPage} of ${pageCount}</span>
+      <button type="button" data-application-page="next" ${applicationPage === pageCount ? 'disabled' : ''}>Next</button>
+    `;
+    pagination.querySelector('[data-application-page="previous"]')?.addEventListener('click', () => {
+      applicationPage -= 1;
+      renderApplications();
+    });
+    pagination.querySelector('[data-application-page="next"]')?.addEventListener('click', () => {
+      applicationPage += 1;
+      renderApplications();
+    });
+  }
 }
 
 function render() {
@@ -602,7 +683,14 @@ if (form) {
             },
             body: file.files[0]
           });
-          if (!uploadResponse.ok) throw new Error(`Payment proof upload failed (${uploadResponse.status})`);
+          if (!uploadResponse.ok) {
+            const details = await uploadResponse.text();
+            const error = new Error(`Payment proof upload failed (${uploadResponse.status})`);
+            error.status = uploadResponse.status;
+            error.details = details;
+            error.operation = 'payment-proof-upload';
+            throw error;
+          }
         }
 
         await supabaseRequest('applications', {
@@ -617,6 +705,7 @@ if (form) {
             branch: data.branch,
             technology: data.technology,
             languages: data.languages,
+            source: 'Website',
             preferred_date: data.preferredDate || null,
             interview_format: data.format,
             notes: data.notes || null,
@@ -624,27 +713,15 @@ if (form) {
           })
         });
 
-        await supabaseRequest('finance_records', {
-          method: 'POST',
-          headers: { Prefer: 'return=minimal' },
-          body: JSON.stringify({
-            interview_date: data.preferredDate || null,
-            candidate: data.name || 'Website Applicant',
-            taken_by: 'Pending Assignment',
-            amount: 79,
-            status: 'Pending'
-          })
-        });
-
         form.reset();
         const label = $('#fileName');
         if (label) label.textContent = 'Choose image or PDF';
-        showToast('Application submitted successfully.', 'success');
+        showToast('Application submitted successfully. Someone from the team will contact you.', 'success');
         open('successModal');
         return;
       } catch (error) {
-        console.error(error);
-        showToast('Application could not be saved to Supabase. Check your table and storage policies.', 'error');
+        captureClientError('application-submit', error);
+        showToast('Failed to submit the form. Error code: SUBMIT_FAILED.', 'error', 5000);
         return;
       }
     }
