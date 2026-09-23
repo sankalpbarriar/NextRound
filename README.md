@@ -19,15 +19,16 @@ Open `index.html` in a browser to view the responsive public site and its team w
 
 1. Open your Supabase project and run the SQL in `supabase/schema.sql` in the SQL editor.
 2. Run `supabase/seed-interview-records.sql` in the SQL editor to import the historical completed interviews.
-3. Create a storage bucket named `payment-proofs` if you want the application proof upload flow to work.
-4. Copy `.env.example` to `.env` and add your project URL, anon key, admin emails, and finance admin email. Keep the service role key for server-side seeding only; never use it in `supabase-config.js`.
+3. Run `supabase/seed-google-meet-applications.sql` to add the latest Google Meet application record.
+4. Create a storage bucket named `payment-proofs` if you want the application proof upload flow to work.
+5. Copy `.env.example` to `.env` and add your project URL, anon key, admin emails, and finance admin email. Keep the service role key for server-side seeding only; never use it in `supabase-config.js`.
    Create those team users in Supabase Dashboard → Authentication → Users before signing in.
-5. Run:
+6. Run:
    `SUPABASE_URL=https://your-project.supabase.co SUPABASE_SERVICE_ROLE_KEY=your-key node scripts/seed-supabase.js`
-6. Generate the browser config from `.env`:
+7. Generate the browser config from `.env`:
    `node scripts/generate-supabase-config.js`
    This creates the ignored `supabase-config.js` runtime file.
-7. Confirm the app loads data from Supabase by opening the site after generating both files.
+8. Confirm the app loads data from Supabase by opening the site after generating both files.
 
 ## Netlify deployment
 

@@ -2,7 +2,6 @@ const $ = (s) => document.querySelector(s);
 
 function readStoredArray(key) {
   const stored = localStorage.getItem(key);
-  if (!stored) return [];
 
   try {
     const parsed = JSON.parse(stored);
@@ -18,6 +17,7 @@ const applications = readStoredArray('nextroundApplications');
 let remoteApplications = [];
 let remoteFinances = null;
 let remoteSchedules = [];
+let remoteAnnouncements = null;
 let applicationPage = 1;
 const applicationsPerPage = 10;
 const save = () => localStorage.setItem('nextroundApplications', JSON.stringify(applications));
@@ -29,7 +29,229 @@ const adminEmails = Array.isArray(supabaseConfig.adminEmails)
   ? supabaseConfig.adminEmails.map(email => String(email).trim().toLowerCase()).filter(Boolean)
   : [String(supabaseConfig.adminEmail || '').trim().toLowerCase()].filter(Boolean);
 const financeAdminEmail = String(supabaseConfig.financeAdminEmail || supabaseConfig.adminEmail || '').trim().toLowerCase();
+let adminAuthorized = false;
 let financeManagerAuthorized = false;
+let announcementPanelOpen = false;
+const ANNOUNCEMENT_STORAGE_KEY = 'nextroundAnnouncements';
+
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function getAnnouncements() {
+  if (remoteAnnouncements) return remoteAnnouncements;
+  const stored = localStorage.getItem(ANNOUNCEMENT_STORAGE_KEY);
+  if (!stored) return [];
+
+  try {
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    localStorage.removeItem(ANNOUNCEMENT_STORAGE_KEY);
+    return [];
+  }
+}
+
+function saveAnnouncements(list) {
+  remoteAnnouncements = list;
+  localStorage.setItem(ANNOUNCEMENT_STORAGE_KEY, JSON.stringify(list));
+}
+
+function isAnnouncementActive(item) {
+  if (item?.eventEnd) return new Date(item.eventEnd).getTime() > Date.now();
+  if (!item?.eventDate) return true;
+  const eventEnd = new Date(`${item.eventDate}T23:59:59`);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return eventEnd >= today;
+}
+
+function renderAnnouncements() {
+  const container = $('#liveAnnouncements');
+  const notification = $('#announcementNotification');
+  if (!container) return;
+
+  const announcements = getAnnouncements()
+    .filter(isAnnouncementActive)
+    .sort((a, b) => new Date(a.eventDate || 0) - new Date(b.eventDate || 0));
+
+  if (!announcements.length) {
+    container.innerHTML = '';
+    container.hidden = true;
+    container.style.display = 'none';
+    if (notification) notification.hidden = true;
+    return;
+  }
+
+  if (notification) {
+    notification.hidden = false;
+    notification.setAttribute('aria-expanded', String(announcementPanelOpen));
+  }
+  container.hidden = !announcementPanelOpen;
+  container.style.display = announcementPanelOpen ? 'grid' : 'none';
+  container.innerHTML = `<div class="announcement-popup-header">
+    <span class="announcement-popup-title">Live announcements</span>
+    <button type="button" id="closeAnnouncementsBtn" class="announcement-popup-close" aria-label="Close announcements" onclick="closeAnnouncements()">×</button>
+  </div>${announcements.map(item => {
+    const meetText = item.meetLink ? `<a class="announcement-link" href="${escapeHtml(item.meetLink)}" target="_blank" rel="noopener noreferrer">Join Google Meet</a>` : '';
+    const dateLabel = item.eventDate ? new Date(`${item.eventDate}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Date TBD';
+    const timeLabel = item.eventTime ? item.eventTime : 'Time TBD';
+
+    return `
+      <article class="live-announcement-card">
+        <div class="announcement-topline">
+          <span class="announcement-badge">Upcoming session</span>
+          <span class="announcement-meta">${escapeHtml(item.guestName || 'Guest')}</span>
+        </div>
+        <h3>${escapeHtml(item.title || 'Event announcement')}</h3>
+        <p>${escapeHtml(item.description || 'A new session is now open for registration.')}</p>
+        <div class="announcement-meta">
+          <span>📅 ${dateLabel}</span>
+          <span>🕒 ${escapeHtml(timeLabel)}</span>
+          <span>👤 ${escapeHtml(item.guestName || 'Guest')}</span>
+        </div>
+        ${meetText}
+      </article>
+    `;
+  }).join('')}`;
+}
+
+window.closeAnnouncements = function () {
+  announcementPanelOpen = false;
+  const panel = $('#liveAnnouncements');
+  const notification = $('#announcementNotification');
+  if (panel) {
+    panel.hidden = true;
+    panel.style.display = 'none';
+  }
+  notification?.setAttribute('aria-expanded', 'false');
+};
+
+function renderAnnouncementAdminList() {
+  const list = $('#announcementAdminList');
+  if (!list) return;
+
+  const announcements = getAnnouncements().sort((a, b) => {
+    const dateA = a.eventDate ? new Date(`${a.eventDate}T00:00:00`).getTime() : 0;
+    const dateB = b.eventDate ? new Date(`${b.eventDate}T00:00:00`).getTime() : 0;
+    return dateB - dateA;
+  });
+
+  if (!announcements.length) {
+    list.innerHTML = '<p class="empty-state">No announcements yet. Use “Add Announcement” to publish a live session.</p>';
+    return;
+  }
+
+  list.innerHTML = announcements.map(item => {
+    const active = isAnnouncementActive(item);
+    const dateLabel = item.eventDate ? new Date(`${item.eventDate}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'No date';
+    return `
+      <div class="announcement-admin-item ${active ? '' : 'expired'}">
+        <div>
+          <strong>${escapeHtml(item.title || 'Announcement')}</strong>
+          <p>${escapeHtml(item.guestName || 'Guest')}</p>
+          <small>${dateLabel}${item.eventTime ? ' • ' + escapeHtml(item.eventTime) : ''}</small>
+        </div>
+        <div class="announcement-admin-actions">
+          <button type="button" onclick="editAnnouncement(${escapeHtml(String(item.id || ''))})">Edit</button>
+          <button type="button" class="delete-btn" onclick="deleteAnnouncement(${escapeHtml(String(item.id || ''))})">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function createAnnouncementItem(payload) {
+  return {
+    id: payload.id || Date.now(),
+    title: payload.title || 'New announcement',
+    guestName: payload.guestName || '',
+    description: payload.description || '',
+    eventDate: payload.eventDate || '',
+    eventTime: payload.eventTime || '',
+    eventEnd: payload.eventEnd || '',
+    meetLink: payload.meetLink || ''
+  };
+}
+
+function mapAnnouncement(row) {
+  return createAnnouncementItem({
+    id: row.id,
+    title: row.title,
+    guestName: row.guest_name,
+    description: row.description,
+    eventDate: row.event_date,
+    eventTime: row.event_time,
+    eventEnd: row.event_end,
+    meetLink: row.meet_link
+  });
+}
+
+async function loadAnnouncements(includeHistory = false) {
+  if (!supabaseEnabled) return;
+
+  try {
+    const filter = includeHistory ? '' : `&event_end=gt.${encodeURIComponent(new Date().toISOString())}`;
+    const rows = await supabaseRequest(`announcements?select=*&order=event_end.asc${filter}`);
+    remoteAnnouncements = (rows || []).map(mapAnnouncement);
+    renderAnnouncements();
+    if (includeHistory) renderAnnouncementAdminList();
+  } catch (error) {
+    console.error(error);
+    showToast('Announcements could not be loaded from Supabase.', 'error');
+  }
+}
+
+window.editAnnouncement = function (id) {
+  if (!financeManagerAuthorized) {
+    showToast('Only the finance admin can edit announcements.', 'warning');
+    return;
+  }
+  const item = getAnnouncements().find(entry => String(entry.id) === String(id));
+  if (!item) return;
+  $('#announcementId').value = item.id;
+  $('#announcementTitle').value = item.title || '';
+  $('#announcementGuest').value = item.guestName || '';
+  $('#announcementDescription').value = item.description || '';
+  $('#announcementDate').value = item.eventDate || '';
+  $('#announcementTime').value = item.eventTime || '';
+  $('#announcementEnd').value = item.eventEnd ? item.eventEnd.slice(0, 16) : '';
+  $('#announcementMeetLink').value = item.meetLink || '';
+  open('announcementModal');
+};
+
+window.deleteAnnouncement = async function (id) {
+  if (!financeManagerAuthorized) {
+    showToast('Only the finance admin can delete announcements.', 'warning');
+    return;
+  }
+  if (!confirm('Delete this announcement?')) return;
+  try {
+    if (supabaseEnabled) {
+      await supabaseRequest(`announcements?id=eq.${id}`, { method: 'DELETE' });
+      await loadSupabaseData();
+    } else {
+      const list = getAnnouncements().filter(entry => String(entry.id) !== String(id));
+      saveAnnouncements(list);
+      renderAnnouncements();
+      renderAnnouncementAdminList();
+    }
+    showToast('Announcement removed.', 'success');
+  } catch (error) {
+    console.error(error);
+    showToast(`Unable to delete announcement: ${error.message || 'Check your Supabase policies.'}`, 'error');
+  }
+};
+
+function resetAnnouncementForm() {
+  $('#announcementForm')?.reset();
+  $('#announcementId').value = '';
+}
 
 function ensureToastContainer() {
   let container = document.getElementById('toastContainer');
@@ -194,14 +416,16 @@ async function loadSupabaseData() {
   if (!signedInEmail) return;
 
   try {
-    const [applicationRows, financeRows, scheduleRows] = await Promise.all([
+    const [applicationRows, financeRows, scheduleRows, announcementRows] = await Promise.all([
       supabaseRequest('applications?select=*&order=created_at.desc'),
       supabaseRequest('finance_records?select=*&order=created_at.desc'),
-      supabaseRequest('scheduled_interviews?select=*&order=interview_date.desc,created_at.desc')
+      supabaseRequest('scheduled_interviews?select=*&order=interview_date.desc,created_at.desc'),
+      supabaseRequest('announcements?select=*&order=event_end.asc')
     ]);
     remoteApplications = (applicationRows || []).map(mapApplication);
     remoteFinances = (financeRows || []).map(mapFinance);
     remoteSchedules = (scheduleRows || []).map(mapSchedule);
+    remoteAnnouncements = (announcementRows || []).map(mapAnnouncement);
     render();
   } catch (error) {
     console.error(error);
@@ -250,9 +474,17 @@ const PAST_SCHEDULE_PAGE_SIZE = 10;
 
 function updateFinanceAdminControls() {
   const addFinanceButton = $('#openAddFinanceBtn');
-  if (!addFinanceButton) return;
-  addFinanceButton.hidden = !financeManagerAuthorized;
-  addFinanceButton.style.display = financeManagerAuthorized ? '' : 'none';
+  const addAnnouncementButton = $('#openAnnouncementModalBtn');
+
+  if (addFinanceButton) {
+    addFinanceButton.hidden = !financeManagerAuthorized;
+    addFinanceButton.style.display = financeManagerAuthorized ? '' : 'none';
+  }
+
+  if (addAnnouncementButton) {
+    addAnnouncementButton.hidden = !financeManagerAuthorized;
+    addAnnouncementButton.style.display = financeManagerAuthorized ? '' : 'none';
+  }
 }
 
 function renderFinances() {
@@ -655,6 +887,8 @@ function render() {
   renderFinances();
   renderSchedules();
   renderApplications();
+  renderAnnouncements();
+  renderAnnouncementAdminList();
 }
 
 // ==========================================================
@@ -814,6 +1048,7 @@ $('#adminForm')?.addEventListener('submit', async (e) => {
       throw new Error('This Supabase Auth user is not in SUPABASE_CONFIG.adminEmails.');
     }
 
+    adminAuthorized = adminEmails.includes(signedInEmail);
     financeManagerAuthorized = signedInEmail === financeAdminEmail;
     updateFinanceAdminControls();
 
@@ -836,6 +1071,7 @@ $('#adminForm')?.addEventListener('submit', async (e) => {
 });
 
 $('#logout')?.addEventListener('click', async () => {
+  adminAuthorized = false;
   financeManagerAuthorized = false;
   updateFinanceAdminControls();
   if (supabaseClient) {
@@ -859,6 +1095,7 @@ async function restoreAdminSession() {
     return;
   }
 
+  adminAuthorized = true;
   financeManagerAuthorized = signedInEmail === financeAdminEmail;
   updateFinanceAdminControls();
   $('#adminLogin').hidden = true;
@@ -869,8 +1106,8 @@ async function restoreAdminSession() {
 
 supabaseClient?.auth.onAuthStateChange((event, session) => {
   if (event === 'TOKEN_REFRESHED' && session) {
-    financeManagerAuthorized = adminEmails.includes(session.user?.email?.toLowerCase() || '')
-      && session.user.email.toLowerCase() === financeAdminEmail;
+    adminAuthorized = adminEmails.includes(session.user?.email?.toLowerCase() || '');
+    financeManagerAuthorized = adminAuthorized && session.user.email.toLowerCase() === financeAdminEmail;
     updateFinanceAdminControls();
   }
 });
@@ -901,6 +1138,95 @@ $('#openAddFinanceBtn')?.addEventListener('click', () => {
   $('#recordStatus').value = 'Settled';
   $('#recordModalEyebrow').textContent = 'RECORD SESSION & PAYMENT';
   open('recordModal');
+});
+
+$('#openAnnouncementModalBtn')?.addEventListener('click', () => {
+  if (!financeManagerAuthorized) {
+    showToast('Only the finance admin can manage announcements.', 'warning');
+    return;
+  }
+  resetAnnouncementForm();
+  open('announcementModal');
+});
+
+$('#announcementNotification')?.addEventListener('click', () => {
+  const panel = $('#liveAnnouncements');
+  const isOpen = panel && !panel.hidden && panel.style.display !== 'none';
+  announcementPanelOpen = !isOpen;
+  renderAnnouncements();
+  if (announcementPanelOpen) {
+    $('#liveAnnouncements')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+});
+
+document.addEventListener('click', (event) => {
+  if (!event.target.closest('#closeAnnouncementsBtn')) return;
+  announcementPanelOpen = false;
+  renderAnnouncements();
+});
+
+document.addEventListener('pointerdown', (event) => {
+  const panel = $('#liveAnnouncements');
+  if (!panel || panel.hidden) return;
+  if (event.target.closest('#liveAnnouncements, #announcementNotification')) return;
+  announcementPanelOpen = false;
+  renderAnnouncements();
+});
+
+$('#announcementForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  if (!financeManagerAuthorized) {
+    showToast('This account can view the dashboard but cannot manage announcements.', 'warning');
+    return;
+  }
+
+  const id = $('#announcementId').value;
+  const item = createAnnouncementItem({
+    id,
+    title: $('#announcementTitle').value.trim(),
+    guestName: $('#announcementGuest').value.trim(),
+    description: $('#announcementDescription').value.trim(),
+    eventDate: $('#announcementDate').value,
+    eventTime: $('#announcementTime').value.trim(),
+    eventEnd: $('#announcementEnd').value,
+    meetLink: $('#announcementMeetLink').value.trim()
+  });
+
+  try {
+    if (supabaseEnabled) {
+      const payload = {
+        title: item.title,
+        guest_name: item.guestName,
+        description: item.description,
+        event_date: item.eventDate || null,
+        event_time: item.eventTime,
+        event_end: new Date(item.eventEnd).toISOString(),
+        meet_link: item.meetLink,
+        created_by: await getSignedInUserEmail()
+      };
+      await supabaseRequest(id ? `announcements?id=eq.${id}` : 'announcements', {
+        method: id ? 'PATCH' : 'POST',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify(payload)
+      });
+      await loadSupabaseData();
+    } else {
+      const current = getAnnouncements();
+      const savedItem = { ...item, id: id || Date.now() };
+      const index = current.findIndex(entry => String(entry.id) === String(id));
+      if (index >= 0) current[index] = savedItem;
+      else current.push(savedItem);
+      saveAnnouncements(current);
+      render();
+    }
+    close('announcementModal');
+    resetAnnouncementForm();
+    showToast('Announcement saved.', 'success');
+  } catch (error) {
+    console.error(error);
+    showToast(`Unable to save announcement: ${error.message || 'Check your Supabase policies.'}`, 'error');
+  }
 });
 
 $('#recordForm')?.addEventListener('submit', (e) => {
@@ -1198,3 +1524,4 @@ if (document.readyState === 'loading') {
 }
 
 restoreAdminSession();
+loadAnnouncements();

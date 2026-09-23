@@ -14,6 +14,13 @@
     NOW TAKING APPLICATIONS <span class="dot"></span> MOCK INTERVIEWS · ₹79
   </div>
 
+  <section id="liveAnnouncements" class="live-announcements" aria-live="polite"></section>
+
+  <button type="button" id="announcementNotification" class="announcement-notification" aria-expanded="false" hidden>
+    <span class="announcement-notification-dot" aria-hidden="true"></span>
+    <span>New announcement</span>
+  </button>
+
   <header class="site-header">
     <a class="brand" href="index.html">
       <span class="brand-mark">N</span>
@@ -146,7 +153,10 @@
       </div>
       <div class="panel-grid">
         <article class="person-card">
-          <div class="person-photo photo-one"><span>01</span></div>
+          <div class="person-photo photo-one">
+            <img src="assets/avinash.jpeg" alt="Avinash Kr. Jha" />
+            <span>01</span>
+          </div>
           <h3>Avinash Kr. Jha</h3>
           <div class="person-companies">
             <span class="company-tag">Capgemini</span>
@@ -154,14 +164,20 @@
           </div>
         </article>
         <article class="person-card offset">
-          <div class="person-photo photo-two"><span>02</span></div>
+          <div class="person-photo photo-two">
+            <img src="assets/ayush.jpeg" alt="Ayush Kr. Gupta" />
+            <span>02</span>
+          </div>
           <h3>Ayush Kr. Gupta</h3>
           <div class="person-companies">
             <span class="company-tag">Capgemini</span>
           </div>
         </article>
         <article class="person-card">
-          <div class="person-photo photo-three"><span>03</span></div>
+          <div class="person-photo photo-three">
+            <img src="assets/sankalp.jpeg" alt="Sankalp Barriar" />
+            <span>03</span>
+          </div>
           <h3>Sankalp Barriar</h3>
           <div class="person-companies">
             <span class="company-tag">LTM</span>
@@ -170,7 +186,10 @@
           </div>
         </article>
         <article class="person-card offset">
-          <div class="person-photo photo-four"><span>04</span></div>
+          <div class="person-photo photo-four">
+            <img src="assets/sashank.jpeg" alt="Shashank Srivastava" />
+            <span>04</span>
+          </div>
           <h3>Shashank Srivastava</h3>
           <div class="person-companies">
             <span class="company-tag">Capgemini</span>
@@ -430,6 +449,44 @@
             </div>
             <div class="feedback-panelist"><span>Panel:</span> Avinash</div>
           </article>
+
+          <!-- Card 13: Aarya Gupta -->
+          <article class="feedback-card">
+            <div class="feedback-card-top">
+              <div>
+                <h3 class="student-name">Aarya Gupta</h3>
+                <div class="student-meta">On 20th September (Sunday)</div>
+              </div>
+              <div class="card-stars">★★★★★</div>
+            </div>
+            <p class="feedback-lead">“A great experience with detailed feedback that exposed where I actually needed to improve.”</p>
+            <p class="feedback-body">“On 20th September (Sunday), I was interviewed by Avinash and Sankalp Bhaiya. The interview started with a brief introduction about me. I was then asked to solve a DSA problem on LeetCode based on HashMap and Prefix Sum. After that, I was asked some questions related to my projects and Spring Boot concepts. Some trickier questions on Strings and OOPs followed, along with a DBMS query. I was also asked to solve another DSA problem on LeetCode, followed by questions on the internal implementation of HashMap. Overall, it was a great experience. At the end, I was given detailed feedback highlighting my strengths and weaknesses. I genuinely found the feedback very insightful, as it helped me identify my actual weaknesses and understand the topics I need to improve on. It was a really valuable experience, and I’m grateful for the detailed and honest feedback.”</p>
+            <div class="feedback-tags">
+              <span class="feedback-tag">HashMap &amp; Prefix Sum</span>
+              <span class="feedback-tag">Spring Boot</span>
+              <span class="feedback-tag">Strings &amp; OOPs</span>
+            </div>
+            <div class="feedback-panelist"><span>Panel:</span> Avinash &amp; Sankalp</div>
+          </article>
+
+          <!-- Card 14: Shreya Pathak -->
+          <article class="feedback-card">
+            <div class="feedback-card-top">
+              <div>
+                <h3 class="student-name">Shreya Pathak</h3>
+                <div class="student-meta">Practical interview prep</div>
+              </div>
+              <div class="card-stars">★★★★★</div>
+            </div>
+            <p class="feedback-lead">“Very practical, insightful, and helpful — it changed how I approach technical interviews.”</p>
+            <p class="feedback-body">“Yesterday, I had a mock interview with Avinash Bhaiya, and it was an amazing learning experience. He started by deep-diving into my projects and then covered basic yet very unique concepts of OOPs and Java. The coding problems he gave me to solve on the IDE were mainly focused on testing my practical and foundational knowledge rather than just theoretical understanding. He also asked one DSA and two SQL questions, followed by some important DBMS concepts. Towards the end, he discussed my strengths and weaknesses and gave me valuable guidance on what to speak, where to elaborate, and where to keep my answers concise. Overall, the interview was very practical, insightful, and helpful. It gave me a much better understanding of how to approach technical interviews and how to present my knowledge effectively.”</p>
+            <div class="feedback-tags">
+              <span class="feedback-tag">Projects &amp; OOPs</span>
+              <span class="feedback-tag">Java &amp; SQL</span>
+              <span class="feedback-tag">DBMS &amp; Guidance</span>
+            </div>
+            <div class="feedback-panelist"><span>Panel:</span> Avinash</div>
+          </article>
         </div>
 
         <div class="carousel-dots" id="carouselDots"></div>
@@ -493,10 +550,21 @@
           </div>
           <div class="dashboard-header-actions">
             <button type="button" class="button button-dark btn-sm" id="openScheduleInterviewBtn">+ Schedule Interview</button>
+            <button type="button" class="button button-dark btn-sm" id="openAnnouncementModalBtn">+ Add Announcement</button>
             <button class="button button-dark btn-sm" id="openAddFinanceBtn" hidden>+ Record Session</button>
             <button class="button button-outline btn-sm" id="exportFinanceBtn">Export CSV ↗</button>
             <button class="logout" id="logout">Log out</button>
           </div>
+        </div>
+
+        <div class="announcement-admin-panel">
+          <div class="list-heading">
+            <div>
+              <h3>Event announcements</h3>
+              <p class="import-note">Visible to students until the event date has passed.</p>
+            </div>
+          </div>
+          <div id="announcementAdminList" class="announcement-admin-list"></div>
         </div>
 
         <!-- Workspace Tabs -->
@@ -710,9 +778,44 @@
     </div>
   </div>
 
+  <!-- Event Announcement Modal -->
+  <div class="modal" id="announcementModal">
+    <div class="modal-card record-modal-card">
+      <button class="close" data-close="announcementModal">×</button>
+      <p class="eyebrow">EVENT ANNOUNCEMENT</p>
+      <h2 style="font-size: 32px; margin-bottom: 22px;">Add a <em>session.</em></h2>
+      <form id="announcementForm" class="expanded-form">
+        <input type="hidden" id="announcementId">
+        <label>Announcement title
+          <input required type="text" id="announcementTitle" placeholder="e.g. Java Interview Bootcamp">
+        </label>
+        <label>Guest / host name
+          <input required type="text" id="announcementGuest" placeholder="e.g. Avinash Kr. Jha">
+        </label>
+        <label>Short description
+          <textarea id="announcementDescription" rows="3" placeholder="Share what the event is about and who it is for."></textarea>
+        </label>
+        <div class="field-row">
+          <label>Event date
+            <input required type="date" id="announcementDate">
+          </label>
+          <label>Event time
+            <input type="text" id="announcementTime" placeholder="7:00 PM">
+          </label>
+        </div>
+        <label>Event ends
+          <input required type="datetime-local" id="announcementEnd">
+        </label>
+        <label>Google Meet link
+          <input type="url" id="announcementMeetLink" placeholder="https://meet.google.com/..."></label>
+        <button class="button button-dark submit-button" type="submit" style="margin-top: 15px;">Save announcement →</button>
+      </form>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="finance-data.js"></script>
   <script src="supabase-config.js?v=2"></script>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=13"></script>
 </body>
 </html>
