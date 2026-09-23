@@ -1028,8 +1028,37 @@ em {
 .feedback-body {
   font: 400 12.5px/1.7 Manrope, sans-serif;
   color: #3b4540;
-  margin: 0 0 22px;
+  margin: 0;
   flex-grow: 1;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  overflow: hidden;
+}
+
+.feedback-card.is-expanded .feedback-body {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+.feedback-read-more {
+  align-self: flex-start;
+  margin: 10px 0 20px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font: 600 10px "DM Mono", monospace;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.feedback-read-more:hover {
+  color: var(--ink);
+  border-color: var(--ink);
 }
 
 .feedback-tags {
@@ -1990,6 +2019,10 @@ footer p {
   .feedback-card {
     flex: 0 0 88%;
     min-width: 260px;
+  }
+
+  .feedback-body {
+    -webkit-line-clamp: 4;
   }
 
   .field-row {

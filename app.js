@@ -1418,6 +1418,24 @@ function initFeedbackCarousel() {
   const nextBtn = document.getElementById('nextFeedback');
   const dotsContainer = document.getElementById('carouselDots');
   const cards = track.querySelectorAll('.feedback-card');
+
+  cards.forEach((card) => {
+    const body = card.querySelector('.feedback-body');
+    if (!body || body.scrollHeight <= body.clientHeight + 1) return;
+
+    const readMore = document.createElement('button');
+    readMore.type = 'button';
+    readMore.className = 'feedback-read-more';
+    readMore.textContent = 'Read more';
+    readMore.setAttribute('aria-expanded', 'false');
+    body.after(readMore);
+
+    readMore.addEventListener('click', () => {
+      const expanded = card.classList.toggle('is-expanded');
+      readMore.textContent = expanded ? 'Show less' : 'Read more';
+      readMore.setAttribute('aria-expanded', String(expanded));
+    });
+  });
   if (!cards.length) return;
 
   let isHovered = false;
