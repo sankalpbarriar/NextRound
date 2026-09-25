@@ -52,7 +52,7 @@
     <section class="form-shell">
       <div class="form-top">
         <span>Application form</span>
-        <span>~5 minutes</span>
+        <span id="formTimeEstimate">~5 minutes</span>
       </div>
 
       <form id="applicationForm" class="expanded-form">
@@ -76,13 +76,13 @@
           <label>WhatsApp number
             <input required type="tel" name="whatsapp" placeholder="+91">
           </label>
-          <label data-guidance-hide>College name
+          <label>College name
             <input required name="college" placeholder="Your college">
           </label>
         </div>
 
         <div class="field-row">
-          <label data-guidance-hide>Current semester
+          <label>Current semester
             <select required name="semester">
               <option value="" selected disabled>Select semester</option>
               <option>1st semester</option>
@@ -96,7 +96,7 @@
               <option>Other</option>
             </select>
           </label>
-          <label data-guidance-hide>Branch
+          <label>Branch
             <select required name="branch">
               <option value="" selected disabled>Select branch</option>
               <option>CSE</option>
@@ -119,9 +119,18 @@
         </label>
 
         <h2 class="form-section-title">Your <em>session.</em></h2>
-        <label>Preferred interview date
-          <input required type="date" name="preferredDate">
-        </label>
+        <div class="field-row">
+          <label>Preferred date
+            <input required type="date" name="preferredDate">
+          </label>
+          <label data-guidance-hide>Preferred interview format
+            <select required name="format">
+              <option value="" selected disabled>Select format</option>
+              <option>One-to-one interview</option>
+              <option>Two-person interview</option>
+            </select>
+          </label>
+        </div>
 
         <label>Anything we should know?
           <textarea name="notes" rows="3" placeholder="Share your target role, interview goals, or anything useful for your panelist."></textarea>
@@ -188,6 +197,6 @@
 
   <script src="finance-data.js"></script>
   <script src="supabase-config.js?v=2"></script>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>

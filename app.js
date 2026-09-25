@@ -1044,6 +1044,7 @@ if (form) {
     const isGuidance = normalizeSessionType(sessionTypeField?.value) === 'guidance';
     document.querySelectorAll('[data-guidance-hide]').forEach(group => {
       group.hidden = isGuidance;
+      group.style.display = isGuidance ? 'none' : '';
       group.querySelectorAll('input, select, textarea').forEach(control => {
         control.required = !isGuidance;
         if (isGuidance) control.value = '';
@@ -1052,6 +1053,8 @@ if (form) {
     const paymentTitle = $('#paymentTitle');
     const paymentDescription = $('#paymentDescription');
     const paymentQr = $('#paymentQr');
+    const formTimeEstimate = $('#formTimeEstimate');
+    if (formTimeEstimate) formTimeEstimate.textContent = isGuidance ? '~2 minutes' : '~5 minutes';
     if (paymentTitle) paymentTitle.innerHTML = isGuidance ? '1:1 guidance<br><em>₹49</em>' : 'Mock interview<br><em>₹79</em>';
     if (paymentQr) {
       paymentQr.src = isGuidance ? 'assets/1-1%20guidance%20qr.jpeg' : 'assets/nextround-payment-qr.png';
