@@ -1,3 +1,9 @@
 [build]
   command = "node scripts/generate-supabase-config.js"
   publish = "."
+
+[[redirects]]
+  from = "/admin"
+  to = "/index.html?admin=1"
+  status = 200
+  force = true

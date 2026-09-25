@@ -1,4 +1,9 @@
 const $ = (s) => document.querySelector(s);
+const isAdminRoute = new URLSearchParams(window.location.search).get('admin') === '1'
+  || window.location.pathname.endsWith('/admin')
+  || window.location.pathname.endsWith('/admin.html');
+
+if (isAdminRoute) document.body.classList.add('admin-route');
 
 function readStoredArray(key) {
   const stored = localStorage.getItem(key);
@@ -19,6 +24,7 @@ let remoteFinances = null;
 let remoteSchedules = [];
 let remoteAnnouncements = null;
 let applicationPage = 1;
+let activeApplicationFilter = 'All';
 const applicationsPerPage = 10;
 const save = () => localStorage.setItem('nextroundApplications', JSON.stringify(applications));
 
@@ -84,12 +90,17 @@ function renderAnnouncements() {
     container.innerHTML = '';
     container.hidden = true;
     container.style.display = 'none';
-    if (notification) notification.hidden = true;
+    if (notification) {
+      notification.hidden = true;
+      notification.style.display = 'none';
+      notification.setAttribute('aria-expanded', 'false');
+    }
     return;
   }
 
   if (notification) {
     notification.hidden = false;
+    notification.style.display = 'inline-flex';
     notification.setAttribute('aria-expanded', String(announcementPanelOpen));
   }
   container.hidden = !announcementPanelOpen;
@@ -341,6 +352,18 @@ async function supabaseRequest(path, options = {}) {
   return JSON.parse(responseText);
 }
 
+function normalizeSessionType(value) {
+  return String(value || '').toLowerCase() === 'guidance' ? 'guidance' : 'mock-interview';
+}
+
+function getSessionTypeLabel(value) {
+  return normalizeSessionType(value) === 'guidance' ? '1:1 Guidance' : 'Mock Interview';
+}
+
+function getSessionAmount(value) {
+  return normalizeSessionType(value) === 'guidance' ? 49 : 79;
+}
+
 function mapApplication(row) {
   return {
     ...row,
@@ -354,6 +377,7 @@ function mapApplication(row) {
     languages: row.languages || row.languages_known || '',
     preferredDate: row.preferred_date,
     format: row.interview_format,
+    sessionType: normalizeSessionType(row.session_type || row.sessionType),
     notes: row.notes || row.additional_notes || '',
     paymentProof: row.payment_proof_url,
     source: row.source || 'Google Form'
@@ -367,7 +391,8 @@ function mapFinance(row) {
     candidate: row.candidate,
     takenBy: row.taken_by,
     amount: row.amount,
-    status: row.status
+    status: row.status,
+    sessionType: normalizeSessionType(row.session_type || row.sessionType)
   };
 }
 
@@ -416,16 +441,32 @@ async function loadSupabaseData() {
   if (!signedInEmail) return;
 
   try {
-    const [applicationRows, financeRows, scheduleRows, announcementRows] = await Promise.all([
+    const results = await Promise.allSettled([
       supabaseRequest('applications?select=*&order=created_at.desc'),
       supabaseRequest('finance_records?select=*&order=created_at.desc'),
       supabaseRequest('scheduled_interviews?select=*&order=interview_date.desc,created_at.desc'),
       supabaseRequest('announcements?select=*&order=event_end.asc')
     ]);
-    remoteApplications = (applicationRows || []).map(mapApplication);
-    remoteFinances = (financeRows || []).map(mapFinance);
-    remoteSchedules = (scheduleRows || []).map(mapSchedule);
-    remoteAnnouncements = (announcementRows || []).map(mapAnnouncement);
+
+    const [applicationsResult, financesResult, schedulesResult, announcementsResult] = results;
+    const sources = [
+      ['applications', applicationsResult],
+      ['finance records', financesResult],
+      ['scheduled interviews', schedulesResult],
+      ['announcements', announcementsResult]
+    ];
+
+    sources.forEach(([source, result]) => {
+      if (result.status === 'rejected') {
+        console.error(`Could not load ${source}.`, result.reason);
+        showToast(`${source} could not be loaded: ${result.reason?.message || 'Check Supabase policies.'}`, 'error', 7000);
+      }
+    });
+
+    if (applicationsResult.status === 'fulfilled') remoteApplications = (applicationsResult.value || []).map(mapApplication);
+    if (financesResult.status === 'fulfilled') remoteFinances = (financesResult.value || []).map(mapFinance);
+    if (schedulesResult.status === 'fulfilled') remoteSchedules = (schedulesResult.value || []).map(mapSchedule);
+    if (announcementsResult.status === 'fulfilled') remoteAnnouncements = (announcementsResult.value || []).map(mapAnnouncement);
     render();
   } catch (error) {
     console.error(error);
@@ -455,7 +496,7 @@ function saveFinances(list) {
 const open = (id) => {
   const el = $('#' + id);
   if (el) el.classList.add('show');
-  document.body.style.overflow = 'hidden';
+  document.body.style.overflow = isAdminRoute ? '' : 'hidden';
 };
 
 const close = (id) => {
@@ -464,10 +505,15 @@ const close = (id) => {
   document.body.style.overflow = '';
 };
 
+function setAdminRouteAuthenticated(isAuthenticated) {
+  document.body.classList.toggle('admin-authenticated', isAuthenticated);
+}
+
 // ==========================================================
 // Financials & Settlements Dashboard Logic
 // ==========================================================
 let activeFinanceFilter = 'All';
+let activeFinanceSessionFilter = 'All';
 let financeSearchQuery = '';
 let pastSchedulePage = 1;
 const PAST_SCHEDULE_PAGE_SIZE = 10;
@@ -525,6 +571,10 @@ function renderFinances() {
     filtered = filtered.filter(item => item.status !== 'Settled');
   } else if (activeFinanceFilter === 'Settled') {
     filtered = filtered.filter(item => item.status === 'Settled');
+  }
+
+  if (activeFinanceSessionFilter !== 'All') {
+    filtered = filtered.filter(item => normalizeSessionType(item.sessionType) === activeFinanceSessionFilter);
   }
 
   if (financeSearchQuery) {
@@ -807,15 +857,57 @@ function exportFinancesToCSV() {
 // ==========================================================
 // Applications Pipeline Logic
 // ==========================================================
+function getApplicationTimestamp(application) {
+  return application.created_at || application.createdAt || application.submittedAt || application.submitted_at || '';
+}
+
+function formatApplicationTimestamp(value) {
+  if (!value) return 'Time unavailable';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Time unavailable';
+  return date.toLocaleString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+}
+
+function getLocalDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function renderApplicationStats(all) {
+  const now = new Date();
+  const todayKey = getLocalDateKey(now);
+  const timestampedApplications = all
+    .map(application => ({ application, date: new Date(getApplicationTimestamp(application)) }))
+    .filter(item => !Number.isNaN(item.date.getTime()));
+  const latest = timestampedApplications.slice().sort((a, b) => b.date - a.date)[0];
+  const receivedToday = timestampedApplications.filter(item => getLocalDateKey(item.date) === todayKey).length;
+
+  $('#applicationTotalStat') && ($('#applicationTotalStat').textContent = all.length);
+  $('#applicationTodayStat') && ($('#applicationTodayStat').textContent = receivedToday);
+  $('#applicationLatestStat') && ($('#applicationLatestStat').textContent = latest ? formatApplicationTimestamp(getApplicationTimestamp(latest.application)).split(',')[0] : '-');
+  $('#applicationLatestNote') && ($('#applicationLatestNote').textContent = latest ? formatApplicationTimestamp(getApplicationTimestamp(latest.application)) : 'No submissions yet');
+}
+
 function renderApplications() {
   const list = $('#applicationList');
   if (!list) return;
   const websiteApplications = supabaseEnabled ? remoteApplications : applications;
-  const all = websiteApplications.slice().sort((a, b) => {
-    const dateDifference = new Date(b.created_at || b.createdAt || 0) - new Date(a.created_at || a.createdAt || 0);
+  const allApplications = websiteApplications.slice().sort((a, b) => {
+    const dateDifference = new Date(getApplicationTimestamp(b) || 0) - new Date(getApplicationTimestamp(a) || 0);
     if (dateDifference) return dateDifference;
     return Number(b.id || 0) - Number(a.id || 0);
   });
+  const all = activeApplicationFilter === 'All'
+    ? allApplications
+    : allApplications.filter(application => normalizeSessionType(application.sessionType) === activeApplicationFilter);
   const pageCount = Math.max(1, Math.ceil(all.length / applicationsPerPage));
   applicationPage = Math.min(applicationPage, pageCount);
   const pageStart = (applicationPage - 1) * applicationsPerPage;
@@ -824,10 +916,12 @@ function renderApplications() {
 
   if ($('#applicationCountBadge')) $('#applicationCountBadge').textContent = all.length;
   if ($('#applicationSubNote')) {
-    $('#applicationSubNote').textContent = supabaseEnabled
-      ? `${websiteApplications.length} database applications`
-      : `${websiteApplications.length} local applications`;
+    const sourceLabel = supabaseEnabled ? 'database' : 'local';
+    $('#applicationSubNote').textContent = activeApplicationFilter === 'All'
+      ? `${allApplications.length} ${sourceLabel} applications`
+      : `${all.length} ${getSessionTypeLabel(activeApplicationFilter)} applications`;
   }
+  renderApplicationStats(allApplications);
 
   if (!all.length) {
     list.innerHTML = '<p class="empty-state">New applications from the public form will appear here.</p>';
@@ -837,18 +931,31 @@ function renderApplications() {
 
   const field = (title, value) => `
     <div class="application-field">
-      <dt>${title}</dt>
-      <dd>${value || 'Not provided'}</dd>
+      <dt>${escapeHtml(title)}</dt>
+      <dd>${escapeHtml(value || 'Not provided')}</dd>
     </div>
   `;
 
-  list.innerHTML = pageItems.map(a => `
+  list.innerHTML = pageItems.map(a => {
+    const applicationTimestamp = getApplicationTimestamp(a);
+    return `
     <article class="application-row">
       <div class="application-heading">
-        <strong>${a.name || 'Applicant'}</strong>
-        <span>${a.source || 'Google Form'}</span>
+        <div>
+          <strong>${escapeHtml(a.name || 'Applicant')}</strong>
+          <span class="application-source">${escapeHtml(a.source || 'Google Form')}</span>
+        </div>
+        <time datetime="${escapeHtml(applicationTimestamp)}">${escapeHtml(formatApplicationTimestamp(applicationTimestamp))}</time>
       </div>
+      <dl class="application-summary">
+        ${field('Session type', getSessionTypeLabel(a.sessionType))}
+        ${field('Email address', a.email)}
+        ${field('WhatsApp number', a.whatsapp)}
+        ${field('College name', a.college)}
+      </dl>
+      <button type="button" class="application-read-more" data-application-id="${escapeHtml(a.id || applicationTimestamp)}">Read more</button>
       <dl class="application-details">
+        ${field('Session type', getSessionTypeLabel(a.sessionType))}
         ${field('Full name', a.name)}
         ${field('Email address', a.email)}
         ${field('WhatsApp number', a.whatsapp)}
@@ -863,7 +970,43 @@ function renderApplications() {
         ${field('Payment screenshot / proof', a.paymentProof)}
       </dl>
     </article>
-  `).join('');
+  `;
+  }).join('');
+
+  list.querySelectorAll('[data-application-id]').forEach(button => {
+    button.addEventListener('click', () => {
+      const application = pageItems.find(item => String(item.id || getApplicationTimestamp(item)) === button.dataset.applicationId);
+      if (!application) return;
+      const detailContent = $('#applicationDetailContent');
+      if (!detailContent) return;
+      const applicationTimestamp = getApplicationTimestamp(application);
+      detailContent.innerHTML = `
+        <div class="application-heading">
+          <div>
+            <strong>${escapeHtml(application.name || 'Applicant')}</strong>
+            <span class="application-source">${escapeHtml(application.source || 'Google Form')}</span>
+          </div>
+          <time datetime="${escapeHtml(applicationTimestamp)}">${escapeHtml(formatApplicationTimestamp(applicationTimestamp))}</time>
+        </div>
+        <dl class="application-details application-details-modal">
+          ${field('Session type', getSessionTypeLabel(application.sessionType))}
+          ${field('Full name', application.name)}
+          ${field('Email address', application.email)}
+          ${field('WhatsApp number', application.whatsapp)}
+          ${field('College name', application.college)}
+          ${field('Current semester', application.semester)}
+          ${field('Branch', application.branch)}
+          ${field('Technologies you know', application.technology)}
+          ${field('Languages you know', application.languages)}
+          ${field('Preferred interview date', application.preferredDate)}
+          ${field('Preferred interview format', application.format)}
+          ${field('Anything we should know?', application.notes)}
+          ${field('Payment screenshot / proof', application.paymentProof)}
+        </dl>
+      `;
+      open('applicationDetailModal');
+    });
+  });
 
   if (pagination) {
     pagination.hidden = pageCount <= 1;
@@ -896,6 +1039,32 @@ function render() {
 // ==========================================================
 const form = $('#applicationForm');
 if (form) {
+  const sessionTypeField = $('#sessionType');
+  const updateApplicationForm = () => {
+    const isGuidance = normalizeSessionType(sessionTypeField?.value) === 'guidance';
+    document.querySelectorAll('[data-guidance-hide]').forEach(group => {
+      group.hidden = isGuidance;
+      group.querySelectorAll('input, select, textarea').forEach(control => {
+        control.required = !isGuidance;
+        if (isGuidance) control.value = '';
+      });
+    });
+    const paymentTitle = $('#paymentTitle');
+    const paymentDescription = $('#paymentDescription');
+    const paymentQr = $('#paymentQr');
+    if (paymentTitle) paymentTitle.innerHTML = isGuidance ? '1:1 guidance<br><em>₹49</em>' : 'Mock interview<br><em>₹79</em>';
+    if (paymentQr) {
+      paymentQr.src = isGuidance ? 'assets/1-1%20guidance%20qr.jpeg' : 'assets/nextround-payment-qr.png';
+      paymentQr.alt = isGuidance ? 'NextRound 1:1 guidance payment QR' : 'NextRound payment QR';
+    }
+    if (paymentDescription) paymentDescription.textContent = isGuidance
+      ? 'Scan the official NextRound QR, make payment, then upload a screenshot below.'
+      : 'Scan the official NextRound QR, make payment, then upload a screenshot below.';
+  };
+
+  sessionTypeField?.addEventListener('change', updateApplicationForm);
+  updateApplicationForm();
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(form));
@@ -940,14 +1109,16 @@ if (form) {
             technology: data.technology,
             languages: data.languages,
             source: 'Website',
+            session_type: normalizeSessionType(data.sessionType),
             preferred_date: data.preferredDate || null,
-            interview_format: data.format,
+            interview_format: data.format || null,
             notes: data.notes || null,
             payment_proof_url: paymentProofPath
           })
         });
 
         form.reset();
+        updateApplicationForm();
         const label = $('#fileName');
         if (label) label.textContent = 'Choose image or PDF';
         showToast('Application submitted successfully. Someone from the team will contact you.', 'success');
@@ -961,6 +1132,7 @@ if (form) {
     }
 
     // 1. Save to applicant queue
+    data.submittedAt = new Date().toISOString();
     applications.push(data);
     save();
 
@@ -979,17 +1151,20 @@ if (form) {
     }
 
     const finances = getFinances();
+    const sessionType = normalizeSessionType(data.sessionType);
     finances.push({
       id: Date.now(),
       date: sessionDate,
       candidate: data.name || 'Website Applicant',
       takenBy: data.interviewer || 'Pending Assignment',
-      amount: 79,
+      amount: getSessionAmount(sessionType),
+      sessionType,
       status: 'Pending'
     });
     saveFinances(finances);
 
     form.reset();
+    updateApplicationForm();
     const label = $('#fileName');
     if (label) label.textContent = 'Choose image or PDF';
     showToast('Application submitted successfully.', 'success');
@@ -1050,6 +1225,7 @@ $('#adminForm')?.addEventListener('submit', async (e) => {
 
     adminAuthorized = adminEmails.includes(signedInEmail);
     financeManagerAuthorized = signedInEmail === financeAdminEmail;
+    setAdminRouteAuthenticated(true);
     updateFinanceAdminControls();
 
     if (!financeManagerAuthorized) {
@@ -1073,6 +1249,7 @@ $('#adminForm')?.addEventListener('submit', async (e) => {
 $('#logout')?.addEventListener('click', async () => {
   adminAuthorized = false;
   financeManagerAuthorized = false;
+  setAdminRouteAuthenticated(false);
   updateFinanceAdminControls();
   if (supabaseClient) {
     await supabaseClient.auth.signOut().catch(console.error);
@@ -1097,10 +1274,11 @@ async function restoreAdminSession() {
 
   adminAuthorized = true;
   financeManagerAuthorized = signedInEmail === financeAdminEmail;
+  setAdminRouteAuthenticated(true);
   updateFinanceAdminControls();
   $('#adminLogin').hidden = true;
   $('#adminDashboard').hidden = false;
-  open('adminModal');
+  if (!isAdminRoute) open('adminModal');
   await loadSupabaseData();
 }
 
@@ -1364,6 +1542,25 @@ $('#financeFilterPills')?.addEventListener('click', (e) => {
   renderFinances();
 });
 
+$('#financeSessionPills')?.addEventListener('click', (e) => {
+  const pill = e.target.closest('.filter-pill');
+  if (!pill) return;
+  document.querySelectorAll('#financeSessionPills .filter-pill').forEach(button => button.classList.remove('active'));
+  pill.classList.add('active');
+  activeFinanceSessionFilter = pill.dataset.sessionFilter || 'All';
+  renderFinances();
+});
+
+$('#applicationFilterPills')?.addEventListener('click', (e) => {
+  const pill = e.target.closest('[data-application-filter]');
+  if (!pill) return;
+  document.querySelectorAll('#applicationFilterPills .filter-pill').forEach(button => button.classList.remove('active'));
+  pill.classList.add('active');
+  activeApplicationFilter = pill.dataset.applicationFilter || 'All';
+  applicationPage = 1;
+  renderApplications();
+});
+
 $('#pastSchedulePrevious')?.addEventListener('click', () => {
   pastSchedulePage = Math.max(1, pastSchedulePage - 1);
   renderSchedules();
@@ -1382,18 +1579,22 @@ $('#tabFinancesBtn')?.addEventListener('click', () => {
   $('#tabFinancesBtn').classList.add('active');
   $('#tabSchedulesBtn').classList.remove('active');
   $('#tabApplicationsBtn').classList.remove('active');
+  $('#tabAnnouncementsBtn').classList.remove('active');
   $('#financesTab').hidden = false;
   $('#schedulesTab').hidden = true;
   $('#applicationsTab').hidden = true;
+  $('#announcementsTab').hidden = true;
 });
 
 $('#tabSchedulesBtn')?.addEventListener('click', () => {
   $('#tabSchedulesBtn').classList.add('active');
   $('#tabApplicationsBtn').classList.remove('active');
   $('#tabFinancesBtn').classList.remove('active');
+  $('#tabAnnouncementsBtn').classList.remove('active');
   $('#schedulesTab').hidden = false;
   $('#applicationsTab').hidden = true;
   $('#financesTab').hidden = true;
+  $('#announcementsTab').hidden = true;
   renderSchedules();
 });
 
@@ -1401,10 +1602,24 @@ $('#tabApplicationsBtn')?.addEventListener('click', () => {
   $('#tabApplicationsBtn').classList.add('active');
   $('#tabSchedulesBtn').classList.remove('active');
   $('#tabFinancesBtn').classList.remove('active');
+  $('#tabAnnouncementsBtn').classList.remove('active');
   $('#schedulesTab').hidden = true;
   $('#financesTab').hidden = true;
   $('#applicationsTab').hidden = false;
+  $('#announcementsTab').hidden = true;
   renderApplications();
+});
+
+$('#tabAnnouncementsBtn')?.addEventListener('click', () => {
+  $('#tabAnnouncementsBtn').classList.add('active');
+  $('#tabApplicationsBtn').classList.remove('active');
+  $('#tabSchedulesBtn').classList.remove('active');
+  $('#tabFinancesBtn').classList.remove('active');
+  $('#applicationsTab').hidden = true;
+  $('#schedulesTab').hidden = true;
+  $('#financesTab').hidden = true;
+  $('#announcementsTab').hidden = false;
+  renderAnnouncementAdminList();
 });
 
 // ==========================================================
@@ -1541,5 +1756,6 @@ if (document.readyState === 'loading') {
   initFeedbackCarousel();
 }
 
+if (isAdminRoute) open('adminModal');
 restoreAdminSession();
 loadAnnouncements();

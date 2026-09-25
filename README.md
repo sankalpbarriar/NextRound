@@ -7,6 +7,7 @@ Open `index.html` in a browser to view the responsive public site and its team w
 - Public information site, plans, application form and FAQ
 - No student login: applications are open directly from the website
 - Team login through Supabase Auth for emails listed in `ADMIN_EMAILS`
+- Team workspace is available at the separate `/admin` route
 - Applications appear in the team dashboard and are stored in the browser only
 
 ## Before launching publicly

@@ -11,7 +11,7 @@
 </head>
 <body>
   <div class="announcement">
-    NOW TAKING APPLICATIONS <span class="dot"></span> MOCK INTERVIEWS · ₹79
+    <span>NOW TAKING APPLICATIONS</span> <span class="dot"></span> <span>MOCK INTERVIEWS</span> <span class="dot"></span> <span>1:1 GUIDANCE</span>
   </div>
 
   <section id="liveAnnouncements" class="live-announcements" aria-live="polite"></section>
@@ -47,7 +47,7 @@
           <span>Instagram</span>
         </a>
       </div>
-      <button class="admin-link" id="openAdmin">Team login ↗</button>
+      <a class="admin-link" href="/admin">Team login ↗</a>
     </div>
   </header>
 
@@ -139,7 +139,7 @@
             <li>Resume / LinkedIn direction</li>
             <li>Personalised preparation roadmap</li>
           </ul>
-          <p class="price">Pricing announced soon</p>
+          <p class="price">₹49 / session</p>
           <a href="apply.html" class="button button-light">Choose 1:1 Guidance →</a>
         </article>
       </div>
@@ -226,7 +226,7 @@
           <article class="feedback-card">
             <div class="feedback-card-top">
               <div>
-                <h3 class="student-name">Ajay</h3>
+                <h3 class="student-name">Ajay Singh Thakur</h3>
                 <div class="student-meta">CSE · LNCTS</div>
               </div>
               <div class="card-stars">★★★★★</div>
@@ -520,7 +520,7 @@
         <span>Instagram</span>
       </a>
     </div>
-    <button class="admin-link" id="openAdminFooter">Team login ↗</button>
+    <a class="admin-link" href="/admin">Team login ↗</a>
   </footer>
 
   <div class="modal" id="adminModal">
@@ -552,19 +552,8 @@
             <button type="button" class="button button-dark btn-sm" id="openScheduleInterviewBtn">+ Schedule Interview</button>
             <button type="button" class="button button-dark btn-sm" id="openAnnouncementModalBtn">+ Add Announcement</button>
             <button class="button button-dark btn-sm" id="openAddFinanceBtn" hidden>+ Record Session</button>
-            <button class="button button-outline btn-sm" id="exportFinanceBtn">Export CSV ↗</button>
             <button class="logout" id="logout">Log out</button>
           </div>
-        </div>
-
-        <div class="announcement-admin-panel">
-          <div class="list-heading">
-            <div>
-              <h3>Event announcements</h3>
-              <p class="import-note">Visible to students until the event date has passed.</p>
-            </div>
-          </div>
-          <div id="announcementAdminList" class="announcement-admin-list"></div>
         </div>
 
         <!-- Workspace Tabs -->
@@ -572,17 +561,42 @@
           <button class="tab-btn active" id="tabApplicationsBtn">📋 Candidate Applications (<span id="applicationCountBadge">0</span>)</button>
           <button class="tab-btn" id="tabSchedulesBtn">📅 Scheduled Interviews (<span id="scheduleCountBadge">0</span>)</button>
           <button class="tab-btn" id="tabFinancesBtn">💰 Finances & Settlements (<span id="financeCountBadge">27</span>)</button>
+          <button class="tab-btn" id="tabAnnouncementsBtn">📣 Event Announcements</button>
         </div>
 
         <!-- TAB 1: Applications Pipeline -->
         <div class="tab-content" id="applicationsTab">
+          <div class="application-stats" aria-label="Application statistics">
+            <div class="application-stat-card">
+              <span>Total applications</span>
+              <strong id="applicationTotalStat">0</strong>
+              <small>All received applications</small>
+            </div>
+            <div class="application-stat-card">
+              <span>Received today</span>
+              <strong id="applicationTodayStat">0</strong>
+              <small>New submissions today</small>
+            </div>
+            <div class="application-stat-card">
+              <span>Latest submission</span>
+              <strong id="applicationLatestStat">-</strong>
+              <small id="applicationLatestNote">No submissions yet</small>
+            </div>
+          </div>
           <div class="dashboard-list">
             <div class="list-heading">
               <div>
                 <h3>Incoming Applications</h3>
                 <p class="import-note" id="applicationSubNote">Loading applicants...</p>
               </div>
-              <button id="clearApplications">Clear demo submissions</button>
+              <div class="application-list-actions">
+                <div class="filter-pills application-filter-pills" id="applicationFilterPills">
+                  <button type="button" class="filter-pill active" data-application-filter="All">All</button>
+                  <button type="button" class="filter-pill" data-application-filter="mock-interview">Mock Interviews</button>
+                  <button type="button" class="filter-pill" data-application-filter="guidance">Guidance</button>
+                </div>
+                <button id="clearApplications" type="button">Clear demo submissions</button>
+              </div>
             </div>
             <div id="applicationList">
               <p class="empty-state">New applications from the public form will appear here.</p>
@@ -646,6 +660,24 @@
 
         <!-- TAB 3: Finances & Settlements -->
         <div class="tab-content" id="financesTab" hidden>
+          <div class="metric-grid finance-stat-grid" aria-label="Finance statistics">
+            <div class="metric-card">
+              <strong id="statTotalRevenue">₹0</strong>
+              <span>Total revenue</span>
+            </div>
+            <div class="metric-card">
+              <strong id="statSettledAmount">₹0</strong>
+              <span>Settled amount</span>
+            </div>
+            <div class="metric-card pending-card">
+              <strong id="statPendingAmount">₹0</strong>
+              <span id="statPendingCount">0 Pending Settlements</span>
+            </div>
+            <div class="metric-card">
+              <strong id="statTotalSessions">0</strong>
+              <span>Total sessions</span>
+            </div>
+          </div>
           <div class="finances-toolbar">
             <div class="search-wrap">
               <input type="text" id="financeSearchInput" placeholder="Search candidate, panelist, date...">
@@ -655,6 +687,12 @@
               <button class="filter-pill" data-filter="Pending">Pending (<span id="pillPendingCount">1</span>)</button>
               <button class="filter-pill" data-filter="Settled">Settled (<span id="pillSettledCount">26</span>)</button>
             </div>
+            <div class="filter-pills" id="financeSessionPills">
+              <button class="filter-pill active" data-session-filter="All">All sessions</button>
+              <button class="filter-pill" data-session-filter="mock-interview">Mock Interviews</button>
+              <button class="filter-pill" data-session-filter="guidance">Guidance</button>
+            </div>
+            <button type="button" class="button button-outline btn-sm finance-export-btn" id="exportFinanceBtn">Export CSV ↗</button>
           </div>
 
           <div class="finances-table-wrap">
@@ -675,7 +713,28 @@
             </table>
           </div>
         </div>
+
+        <!-- TAB 4: Event Announcements -->
+        <div class="tab-content" id="announcementsTab" hidden>
+          <div class="announcement-admin-panel">
+            <div class="list-heading">
+              <div>
+                <h3>Event announcements</h3>
+                <p class="import-note">Visible to students until the event date has passed.</p>
+              </div>
+            </div>
+            <div id="announcementAdminList" class="announcement-admin-list"></div>
+          </div>
+        </div>
       </div>
+    </div>
+  </div>
+
+  <div class="modal" id="applicationDetailModal">
+    <div class="modal-card application-detail-modal-card">
+      <button class="close" data-close="applicationDetailModal" aria-label="Close application details">×</button>
+      <p class="eyebrow">APPLICATION DETAILS</p>
+      <div id="applicationDetailContent"></div>
     </div>
   </div>
 

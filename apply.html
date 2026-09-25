@@ -57,6 +57,12 @@
 
       <form id="applicationForm" class="expanded-form">
         <h2>About <em>you.</em></h2>
+        <label>What are you applying for?
+          <select required name="sessionType" id="sessionType">
+            <option value="mock-interview" selected>Mock interview - ₹79</option>
+            <option value="guidance">1:1 guidance session - ₹49</option>
+          </select>
+        </label>
         <div class="field-row">
           <label>Full name
             <input required name="name" placeholder="Your full name">
@@ -70,13 +76,13 @@
           <label>WhatsApp number
             <input required type="tel" name="whatsapp" placeholder="+91">
           </label>
-          <label>College name
+          <label data-guidance-hide>College name
             <input required name="college" placeholder="Your college">
           </label>
         </div>
 
         <div class="field-row">
-          <label>Current semester
+          <label data-guidance-hide>Current semester
             <select required name="semester">
               <option value="" selected disabled>Select semester</option>
               <option>1st semester</option>
@@ -90,7 +96,7 @@
               <option>Other</option>
             </select>
           </label>
-          <label>Branch
+          <label data-guidance-hide>Branch
             <select required name="branch">
               <option value="" selected disabled>Select branch</option>
               <option>CSE</option>
@@ -104,27 +110,18 @@
           </label>
         </div>
 
-        <label>Technologies you know
+        <label data-guidance-hide>Technologies you know
           <textarea required name="technology" rows="3" placeholder="Example: React, SQL, AWS, Android, Figma..."></textarea>
         </label>
 
-        <label>Languages you know
+        <label data-guidance-hide>Languages you know
           <input required name="languages" placeholder="Example: Java, C++, Python, JavaScript...">
         </label>
 
         <h2 class="form-section-title">Your <em>session.</em></h2>
-        <div class="field-row">
-          <label>Preferred interview date
-            <input required type="date" name="preferredDate">
-          </label>
-          <label>Preferred interview format
-            <select required name="format">
-              <option value="" selected disabled>Select format</option>
-              <option>One-to-one interview</option>
-              <option>Two-person interview</option>
-            </select>
-          </label>
-        </div>
+        <label>Preferred interview date
+          <input required type="date" name="preferredDate">
+        </label>
 
         <label>Anything we should know?
           <textarea name="notes" rows="3" placeholder="Share your target role, interview goals, or anything useful for your panelist."></textarea>
@@ -133,10 +130,10 @@
         <div class="payment-card">
           <div class="payment-copy">
             <p class="eyebrow">PAYMENT</p>
-            <h3>Mock interview<br><em>₹79</em></h3>
-            <p>Scan the official NextRound QR, make payment, then upload a screenshot below.</p>
+            <h3 id="paymentTitle">Mock interview<br><em>₹79</em></h3>
+            <p id="paymentDescription">Scan the official NextRound QR, make payment, then upload a screenshot below.</p>
           </div>
-          <img class="payment-qr" src="assets/nextround-payment-qr.png" alt="NextRound payment QR">
+          <img class="payment-qr" id="paymentQr" src="assets/nextround-payment-qr.png" alt="NextRound payment QR">
         </div>
 
         <label class="upload-field">Payment screenshot / proof
