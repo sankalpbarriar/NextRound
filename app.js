@@ -1234,7 +1234,7 @@ $('#adminForm')?.addEventListener('submit', async (e) => {
     if (!financeManagerAuthorized) {
       $('#adminLogin').hidden = true;
       $('#adminDashboard').hidden = false;
-      showToast('This account can view the dashboard but cannot modify finance data.', 'info');
+      showToast('Successfully logged in as an Admin.', 'success');
       await loadSupabaseData();
       return;
     }
