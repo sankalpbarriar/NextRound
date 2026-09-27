@@ -1667,23 +1667,67 @@ function initFeedbackCarousel() {
     return firstCard.offsetWidth + gap;
   }
 
-  function renderDots() {
-    if (!dotsContainer) return;
-    dotsContainer.innerHTML = Array.from(cards).map((_, i) =>
-      `<button aria-label="Go to feedback ${i + 1}" data-index="${i}"></button>`
-    ).join('');
-    updateActiveDot();
+const MAX_DOTS = 5;
+
+function renderDots() {
+  if (!dotsContainer) return;
+
+  const activeIndex = Math.min(
+    cards.length - 1,
+    Math.max(0, Math.round(track.scrollLeft / getStepWidth()))
+  );
+
+  let start = Math.max(0, activeIndex - Math.floor(MAX_DOTS / 2));
+
+  if (start + MAX_DOTS > cards.length) {
+    start = Math.max(0, cards.length - MAX_DOTS);
   }
 
-  function updateActiveDot() {
-    if (!dotsContainer) return;
-    const step = getStepWidth();
-    const activeIndex = Math.min(cards.length - 1, Math.max(0, Math.round(track.scrollLeft / step)));
-    const dots = dotsContainer.querySelectorAll('button');
+  const end = Math.min(cards.length, start + MAX_DOTS);
+
+  dotsContainer.innerHTML = Array.from(
+    { length: end - start },
+    (_, i) => {
+      const index = start + i;
+
+      return `
+        <button
+          aria-label="Go to feedback ${index + 1}"
+          data-index="${index}"
+          class="${index === activeIndex ? 'active' : ''}"
+        ></button>
+      `;
+    }
+  ).join('');
+}
+function updateActiveDot() {
+  if (!dotsContainer) return;
+
+  const step = getStepWidth();
+  const activeIndex = Math.min(
+    cards.length - 1,
+    Math.max(0, Math.round(track.scrollLeft / step))
+  );
+
+  const dots = dotsContainer.querySelectorAll('button');
+
+  if (cards.length <= MAX_DOTS) {
     dots.forEach((dot, idx) => {
       dot.classList.toggle('active', idx === activeIndex);
     });
+    return;
   }
+
+  // Map all feedbacks into 5 visual positions
+  const dotIndex = Math.min(
+    MAX_DOTS - 1,
+    Math.floor((activeIndex / cards.length) * MAX_DOTS)
+  );
+
+  dots.forEach((dot, idx) => {
+    dot.classList.toggle('active', idx === dotIndex);
+  });
+}
 
   function scrollNext() {
     const step = getStepWidth();
@@ -1739,14 +1783,20 @@ function initFeedbackCarousel() {
     startAutoPlay();
   });
 
-  dotsContainer?.addEventListener('click', (e) => {
-    const btn = e.target.closest('button');
-    if (!btn) return;
-    const idx = parseInt(btn.dataset.index, 10);
-    const step = getStepWidth();
-    track.scrollTo({ left: idx * step, behavior: 'smooth' });
-    startAutoPlay();
+ dotsContainer?.addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+
+  const idx = parseInt(btn.dataset.index, 10);
+  const step = getStepWidth();
+
+  track.scrollTo({
+    left: idx * step,
+    behavior: 'smooth'
   });
+
+  startAutoPlay();
+});
 
   renderDots();
   startAutoPlay();
