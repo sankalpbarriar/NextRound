@@ -1322,26 +1322,11 @@ if (form) {
           notes: data.notes || null,
           payment_proof_url: paymentProofPath
         };
-
-        try {
-          await supabaseRequest('applications?on_conflict=submission_id', {
-            method: 'POST',
-            headers: { Prefer: 'resolution=ignore-duplicates,return=minimal' },
-            body: JSON.stringify(applicationPayload)
-          });
-        } catch (error) {
-          const schemaErrorCodes = ['PGRST204', '42703', '42P10'];
-          if (!schemaErrorCodes.includes(error.details?.code)) throw error;
-
-          captureClientError('application-submit-schema-fallback', error);
-          const { submission_id, ...legacyApplicationPayload } = applicationPayload;
-          await supabaseRequest('applications', {
-            method: 'POST',
-            headers: { Prefer: 'return=minimal' },
-            body: JSON.stringify(legacyApplicationPayload)
-          });
-        }
-
+        await supabaseRequest('applications?on_conflict=submission_id', {
+          method: 'POST',
+          headers: { Prefer: 'resolution=ignore-duplicates,return=minimal' },
+          body: JSON.stringify(applicationPayload)
+        });
         sessionStorage.removeItem(APPLICATION_SUBMISSION_KEY);
         form.reset();
         updateApplicationForm();
