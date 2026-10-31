@@ -41,7 +41,6 @@ let financeManagerAuthorized = false;
 let announcementPanelOpen = false;
 const ANNOUNCEMENT_STORAGE_KEY = 'nextroundAnnouncements';
 const SITE_NOTICE_STORAGE_KEY = 'nextroundSiteNotice';
-const APPLICATION_SUBMISSION_KEY = 'nextroundPendingApplicationSubmission';
 let applicationSortDirection = 'desc';
 let financeSortDirection = 'desc';
 let scheduleSortDirection = 'desc';
@@ -1261,8 +1260,9 @@ if (form) {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (form.dataset.submitting === 'true') return;
+    if (form.dataset.submitting === 'true' || form.dataset.submitted === 'true') return;
     form.dataset.submitting = 'true';
+    let submissionSucceeded = false;
     const submitButton = form.querySelector('[type="submit"]');
     const submitLabel = submitButton?.textContent || '';
     if (submitButton) {
@@ -1277,11 +1277,6 @@ if (form) {
 
     if (supabaseEnabled) {
       try {
-        let submissionId = sessionStorage.getItem(APPLICATION_SUBMISSION_KEY);
-        if (!submissionId) {
-          submissionId = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-          sessionStorage.setItem(APPLICATION_SUBMISSION_KEY, submissionId);
-        }
         let paymentProofPath = null;
         if (file?.files[0]) {
           const safeName = file.files[0].name.replace(/[^a-zA-Z0-9._-]/g, '-');
@@ -1304,9 +1299,7 @@ if (form) {
             throw error;
           }
         }
-
         const applicationPayload = {
-          submission_id: submissionId,
           name: data.name,
           email: data.email,
           whatsapp: data.whatsapp,
@@ -1322,21 +1315,21 @@ if (form) {
           notes: data.notes || null,
           payment_proof_url: paymentProofPath
         };
-        await supabaseRequest('applications?on_conflict=submission_id', {
+        await supabaseRequest('applications', {
           method: 'POST',
           headers: {
-            Prefer: 'resolution=ignore-duplicates,return=minimal',
+            Prefer: 'return=minimal',
             Authorization: `Bearer ${supabaseConfig.anonKey}`
           },
           body: JSON.stringify(applicationPayload)
         });
-        sessionStorage.removeItem(APPLICATION_SUBMISSION_KEY);
         form.reset();
         updateApplicationForm();
         const label = $('#fileName');
         if (label) label.textContent = 'Choose image or PDF';
         showToast('Application submitted successfully. Someone from the team will contact you.', 'success');
         open('successModal');
+        submissionSucceeded = true;
         return;
       } catch (error) {
         captureClientError('application-submit', error);
@@ -1388,12 +1381,14 @@ if (form) {
     if (label) label.textContent = 'Choose image or PDF';
     showToast('Application submitted successfully.', 'success');
     open('successModal');
+    submissionSucceeded = true;
     } finally {
       delete form.dataset.submitting;
       if (submitButton) {
-        submitButton.disabled = false;
-        submitButton.textContent = submitLabel;
+        submitButton.disabled = submissionSucceeded;
+        submitButton.textContent = submissionSucceeded ? 'Submitted' : submitLabel;
       }
+      if (submissionSucceeded) form.dataset.submitted = 'true';
     }
   });
 }
