@@ -1324,7 +1324,10 @@ if (form) {
         };
         await supabaseRequest('applications?on_conflict=submission_id', {
           method: 'POST',
-          headers: { Prefer: 'resolution=ignore-duplicates,return=minimal' },
+          headers: {
+            Prefer: 'resolution=ignore-duplicates,return=minimal',
+            Authorization: `Bearer ${supabaseConfig.anonKey}`
+          },
           body: JSON.stringify(applicationPayload)
         });
         sessionStorage.removeItem(APPLICATION_SUBMISSION_KEY);
