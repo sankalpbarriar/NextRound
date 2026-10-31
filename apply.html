@@ -55,7 +55,13 @@
         <span id="formTimeEstimate">~5 minutes</span>
       </div>
 
-      <form id="applicationForm" class="expanded-form">
+      <div id="applicationAvailabilityNotice" class="application-paused-notice" role="status" aria-live="polite">
+        <p class="eyebrow">APPLICATION STATUS</p>
+        <h2>Checking availability…</h2>
+        <p>Please wait while we check whether applications are open.</p>
+      </div>
+
+      <form id="applicationForm" class="expanded-form" novalidate hidden>
         <h2>About <em>you.</em></h2>
         <label>What are you applying for?
           <select required name="sessionType" id="sessionType">
@@ -197,6 +203,6 @@
 
   <script src="finance-data.js"></script>
   <script src="supabase-config.js?v=2"></script>
-  <script src="app.js?v=19"></script>
+  <script src="app.js?v=27"></script>
 </body>
 </html>

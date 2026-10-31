@@ -41,6 +41,8 @@ let financeManagerAuthorized = false;
 let announcementPanelOpen = false;
 const ANNOUNCEMENT_STORAGE_KEY = 'nextroundAnnouncements';
 const SITE_NOTICE_STORAGE_KEY = 'nextroundSiteNotice';
+const DEFAULT_APPLICATION_PAUSE_MESSAGE = 'Due to high demand, we have temporarily paused applications while our interview panels get ready. We’ll be back soon. Please check back shortly.';
+let applicationAvailability = null;
 let applicationSortDirection = 'desc';
 let financeSortDirection = 'desc';
 let scheduleSortDirection = 'desc';
@@ -246,7 +248,7 @@ function renderSiteNoticeAdminList() {
         <p>${escapeHtml(notice.message || '')}</p>
         <small>${formatDateDDMMYYYY(notice.created_at || notice.updated_at)}</small>
       </div>
-      ${financeManagerAuthorized ? `<div class="announcement-admin-actions">
+      ${adminAuthorized ? `<div class="announcement-admin-actions">
         <button type="button" onclick="editSiteNotice(${Number(notice.id)})">Edit</button>
         <button type="button" class="delete-btn" onclick="deleteSiteNotice(${Number(notice.id)})">Delete</button>
       </div>` : '<span class="site-notice-status">Read only</span>'}
@@ -254,9 +256,158 @@ function renderSiteNoticeAdminList() {
   `).join('');
 }
 
-window.editSiteNotice = function (id) {
+function renderApplicationAvailability() {
+  const form = $('#applicationForm');
+  const notice = $('#applicationAvailabilityNotice');
+  if (form && notice) {
+    if (!supabaseEnabled) {
+      form.hidden = false;
+      notice.hidden = true;
+    } else if (!applicationAvailability) {
+      form.hidden = true;
+      notice.hidden = false;
+      notice.querySelector('h2').textContent = 'Applications temporarily unavailable';
+      notice.querySelector('p:last-child').textContent = 'We can’t confirm application availability right now. Please try again shortly.';
+    } else {
+      const accepting = applicationAvailability.accepting_responses;
+      form.hidden = !accepting;
+      notice.hidden = accepting;
+      if (!accepting) {
+        notice.querySelector('h2').textContent = 'Applications are temporarily paused';
+        notice.querySelector('p:last-child').textContent = applicationAvailability.pause_message || DEFAULT_APPLICATION_PAUSE_MESSAGE;
+      }
+    }
+  }
+
+  const adminForm = $('#applicationAvailabilityForm');
+  if (!adminForm) return;
+  adminForm.hidden = !financeManagerAuthorized;
+  const pausedToggle = $('#applicationsPausedToggle');
+  const action = $('#applicationAvailabilityAction');
+  const messageField = $('#applicationPauseMessage');
+  const messageFieldLabel = $('#applicationPauseMessageField');
+  const saveMessageButton = $('#saveApplicationPauseMessage');
+  const status = $('#applicationAvailabilityAdminStatus');
+  if (!applicationAvailability) {
+    if (status) status.textContent = 'Application settings have not loaded yet.';
+    return;
+  }
+  const paused = !applicationAvailability.accepting_responses;
+  if (pausedToggle) pausedToggle.checked = paused;
+  if (action) action.textContent = paused ? 'Resume taking applications' : 'Pause applications';
+  if (messageFieldLabel) messageFieldLabel.hidden = !paused;
+  if (saveMessageButton) saveMessageButton.hidden = !paused;
+  if (messageField && document.activeElement !== messageField) messageField.value = applicationAvailability.pause_message || '';
+  if (status) {
+    status.textContent = paused ? 'Applications are paused.' : 'Applications are open.';
+  }
+}
+
+async function loadApplicationAvailability() {
+  if (!supabaseEnabled) {
+    applicationAvailability = {
+      accepting_responses: true
+    };
+    renderApplicationAvailability();
+    return;
+  }
+
+  try {
+    const settings = await supabaseRequest('application_settings?select=accepting_responses,pause_message&id=eq.1');
+    if (!Array.isArray(settings) || !settings.length) {
+      throw new Error('Application settings are missing. Run the application availability SQL migration.');
+    }
+    applicationAvailability = {
+      accepting_responses: settings[0].accepting_responses === true,
+      pause_message: String(settings[0].pause_message || '')
+    };
+    renderApplicationAvailability();
+  } catch (error) {
+    applicationAvailability = null;
+    captureClientError('application-availability-load', error);
+    renderApplicationAvailability();
+    if ($('#applicationAvailabilityForm') && financeManagerAuthorized) {
+      showToast(`Application settings could not be loaded: ${error.message || 'Check Supabase policies.'}`, 'error', 7000);
+    }
+  }
+}
+
+$('#applicationsPausedToggle')?.addEventListener('change', async event => {
   if (!financeManagerAuthorized) {
-    showToast('Only the finance admin can manage site notices.', 'warning');
+    showToast('Only the finance admin can change application availability.', 'warning');
+    await loadApplicationAvailability();
+    return;
+  }
+
+  const toggle = event.currentTarget;
+  const acceptingResponses = !toggle.checked;
+  toggle.disabled = true;
+  try {
+    const updatedSettings = await supabaseRequest('application_settings?id=eq.1&select=id', {
+      method: 'PATCH',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify({
+        accepting_responses: acceptingResponses,
+        updated_at: new Date().toISOString()
+      })
+    });
+    if (!Array.isArray(updatedSettings) || !updatedSettings.length) {
+      throw new Error('No application settings were updated. Check that the finance admin is signed in and the application settings migration has been applied.');
+    }
+    applicationAvailability = {
+      ...applicationAvailability,
+      accepting_responses: acceptingResponses
+    };
+    renderApplicationAvailability();
+    showToast(acceptingResponses ? 'Applications are open.' : 'Applications are paused.', 'success');
+  } catch (error) {
+    captureClientError('application-availability-save', error);
+    showToast(`Unable to update application availability: ${error.message || 'Check Supabase policies.'}`, 'error', 7000);
+    await loadApplicationAvailability();
+  } finally {
+    toggle.disabled = false;
+  }
+});
+
+$('#applicationAvailabilityForm')?.addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!financeManagerAuthorized || applicationAvailability?.accepting_responses !== false) {
+    showToast('Pause applications before setting a custom message.', 'warning');
+    return;
+  }
+
+  const message = $('#applicationPauseMessage').value.trim();
+  const submitButton = $('#saveApplicationPauseMessage');
+  submitButton.disabled = true;
+  submitButton.textContent = 'Saving...';
+  try {
+    const updatedSettings = await supabaseRequest('application_settings?id=eq.1&select=id', {
+      method: 'PATCH',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify({
+        pause_message: message,
+        updated_at: new Date().toISOString()
+      })
+    });
+    if (!Array.isArray(updatedSettings) || !updatedSettings.length) {
+      throw new Error('No application settings were updated. Check that the finance admin is signed in.');
+    }
+    applicationAvailability.pause_message = message;
+    renderApplicationAvailability();
+    showToast('Pause message saved.', 'success');
+  } catch (error) {
+    captureClientError('application-pause-message-save', error);
+    showToast(`Unable to save the pause message: ${error.message || 'Check Supabase policies.'}`, 'error', 7000);
+    await loadApplicationAvailability();
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = 'Save pause message';
+  }
+});
+
+window.editSiteNotice = function (id) {
+  if (!adminAuthorized) {
+    showToast('Only an authorized admin can manage site notices.', 'warning');
     return;
   }
   const notice = getSiteNotices().find(item => String(item.id) === String(id));
@@ -270,8 +421,8 @@ window.editSiteNotice = function (id) {
 };
 
 window.deleteSiteNotice = async function (id) {
-  if (!financeManagerAuthorized) {
-    showToast('Only the finance admin can manage site notices.', 'warning');
+  if (!adminAuthorized) {
+    showToast('Only an authorized admin can manage site notices.', 'warning');
     return;
   }
   if (!confirm('Delete this notice from the notice history?')) return;
@@ -328,10 +479,10 @@ function renderAnnouncementAdminList() {
           <p>${escapeHtml(item.guestName || 'Guest')}</p>
           <small>${dateLabel}${item.eventTime ? ' • ' + escapeHtml(item.eventTime) : ''}</small>
         </div>
-        <div class="announcement-admin-actions">
+        ${adminAuthorized ? `<div class="announcement-admin-actions">
           <button type="button" onclick="editAnnouncement(${escapeHtml(String(item.id || ''))})">Edit</button>
           <button type="button" class="delete-btn" onclick="deleteAnnouncement(${escapeHtml(String(item.id || ''))})">Delete</button>
-        </div>
+        </div>` : '<span class="site-notice-status">Read only</span>'}
       </div>
     `;
   }).join('');
@@ -379,8 +530,8 @@ async function loadAnnouncements(includeHistory = false) {
 }
 
 window.editAnnouncement = function (id) {
-  if (!financeManagerAuthorized) {
-    showToast('Only the finance admin can edit announcements.', 'warning');
+  if (!adminAuthorized) {
+    showToast('Only an authorized admin can edit announcements.', 'warning');
     return;
   }
   const item = getAnnouncements().find(entry => String(entry.id) === String(id));
@@ -397,8 +548,8 @@ window.editAnnouncement = function (id) {
 };
 
 window.deleteAnnouncement = async function (id) {
-  if (!financeManagerAuthorized) {
-    showToast('Only the finance admin can delete announcements.', 'warning');
+  if (!adminAuthorized) {
+    showToast('Only an authorized admin can delete announcements.', 'warning');
     return;
   }
   if (!confirm('Delete this announcement?')) return;
@@ -510,6 +661,69 @@ async function supabaseRequest(path, options = {}) {
   const responseText = await response.text();
   if (!responseText.trim()) return null;
   return JSON.parse(responseText);
+}
+
+async function loadCompletedInterviewCount() {
+  const countElement = $('#completedInterviewCount');
+  if (!countElement || !supabaseEnabled) return;
+
+  const formatter = new Intl.NumberFormat('en-IN');
+  let currentCount = 0;
+  let hasLoadedCount = false;
+
+  const animateCount = count => {
+    const startCount = currentCount;
+    currentCount = count;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      countElement.textContent = formatter.format(count);
+      return;
+    }
+
+    const startTime = performance.now();
+    const duration = 1000;
+    const animate = now => {
+      const progress = Math.min((now - startTime) / duration, 1);
+      const easedProgress = 1 - ((1 - progress) ** 3);
+      const displayedCount = Math.round(startCount + ((count - startCount) * easedProgress));
+      countElement.textContent = formatter.format(displayedCount);
+      if (progress < 1) requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+  };
+
+  const refreshCount = async () => {
+    try {
+      const response = await fetch(`${supabaseConfig.url}/rest/v1/rpc/completed_interview_count`, {
+        method: 'POST',
+        headers: {
+          apikey: supabaseConfig.anonKey,
+          Authorization: `Bearer ${supabaseConfig.anonKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: '{}'
+      });
+      if (!response.ok) {
+        const error = new Error(`Completed interview count request failed (${response.status})`);
+        error.status = response.status;
+        error.details = await response.text();
+        throw error;
+      }
+
+      const count = Number(await response.json());
+      if (!Number.isSafeInteger(count) || count < 0) {
+        throw new Error('Completed interview count returned an invalid value.');
+      }
+
+      animateCount(count);
+      hasLoadedCount = true;
+    } catch (error) {
+      captureClientError('completed-interview-count', error);
+      if (!hasLoadedCount) countElement.textContent = '—';
+    }
+  };
+
+  await refreshCount();
+  window.setInterval(refreshCount, 60000);
 }
 
 function normalizeSessionType(value) {
@@ -697,13 +911,13 @@ function updateFinanceAdminControls() {
   }
 
   if (addAnnouncementButton) {
-    addAnnouncementButton.hidden = !financeManagerAuthorized;
-    addAnnouncementButton.style.display = financeManagerAuthorized ? '' : 'none';
+    addAnnouncementButton.hidden = !adminAuthorized;
+    addAnnouncementButton.style.display = adminAuthorized ? '' : 'none';
   }
 
   if (addSiteNoticeButton) {
-    addSiteNoticeButton.hidden = !financeManagerAuthorized;
-    addSiteNoticeButton.style.display = financeManagerAuthorized ? '' : 'none';
+    addSiteNoticeButton.hidden = !adminAuthorized;
+    addSiteNoticeButton.style.display = adminAuthorized ? '' : 'none';
   }
 }
 
@@ -1230,6 +1444,57 @@ function render() {
 const form = $('#applicationForm');
 if (form) {
   const sessionTypeField = $('#sessionType');
+  const clearApplicationFieldError = (control) => {
+    const label = control.closest('label');
+    const error = label?.querySelector(`[data-validation-for="${control.name}"]`);
+    if (error) {
+      if (control.getAttribute('aria-describedby') === error.id) control.removeAttribute('aria-describedby');
+      error.remove();
+    }
+    control.removeAttribute('aria-invalid');
+    label?.classList.remove('has-validation-error');
+  };
+  const validateRequiredApplicationFields = () => {
+    let firstInvalidField = null;
+    const controls = [...form.querySelectorAll('input, select, textarea')]
+      .filter(control => control.required && !control.disabled);
+
+    controls.forEach(control => {
+      const label = control.closest('label');
+      if (control.checkValidity()) {
+        clearApplicationFieldError(control);
+        return;
+      }
+
+      if (!firstInvalidField) firstInvalidField = control;
+      let error = label?.querySelector(`[data-validation-for="${control.name}"]`);
+      if (!error && label) {
+        error = document.createElement('span');
+        error.className = 'application-field-error';
+        error.dataset.validationFor = control.name;
+        error.id = `${form.id}-${control.name}-error`;
+        error.setAttribute('role', 'alert');
+        label.append(error);
+      }
+      if (error) {
+        error.textContent = control.validity.valueMissing
+          ? 'This field is required.'
+          : control.validity.typeMismatch
+            ? 'Enter a valid email address.'
+            : 'Please enter a valid value.';
+        control.setAttribute('aria-describedby', error.id);
+      }
+      control.setAttribute('aria-invalid', 'true');
+      label?.classList.add('has-validation-error');
+    });
+
+    if (firstInvalidField) {
+      firstInvalidField.focus();
+      firstInvalidField.closest('label')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+    return true;
+  };
   const updateApplicationForm = () => {
     const isGuidance = normalizeSessionType(sessionTypeField?.value) === 'guidance';
     document.querySelectorAll('[data-guidance-hide]').forEach(group => {
@@ -1237,7 +1502,10 @@ if (form) {
       group.style.display = isGuidance ? 'none' : '';
       group.querySelectorAll('input, select, textarea').forEach(control => {
         control.required = !isGuidance;
-        if (isGuidance) control.value = '';
+        if (isGuidance) {
+          control.value = '';
+          clearApplicationFieldError(control);
+        }
       });
     });
     const paymentTitle = $('#paymentTitle');
@@ -1258,9 +1526,29 @@ if (form) {
   sessionTypeField?.addEventListener('change', updateApplicationForm);
   updateApplicationForm();
 
+  form.addEventListener('input', event => {
+    const control = event.target;
+    if (control instanceof HTMLInputElement || control instanceof HTMLSelectElement || control instanceof HTMLTextAreaElement) {
+      if (control.checkValidity()) clearApplicationFieldError(control);
+    }
+  });
+  form.addEventListener('change', event => {
+    const control = event.target;
+    if (control instanceof HTMLInputElement || control instanceof HTMLSelectElement || control instanceof HTMLTextAreaElement) {
+      if (control.checkValidity()) clearApplicationFieldError(control);
+    }
+  });
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (form.dataset.submitting === 'true' || form.dataset.submitted === 'true') return;
+    if (!validateRequiredApplicationFields()) return;
+    if (supabaseEnabled) await loadApplicationAvailability();
+    if (supabaseEnabled && applicationAvailability?.accepting_responses !== true) {
+      renderApplicationAvailability();
+      showToast(DEFAULT_APPLICATION_PAUSE_MESSAGE, 'warning', 7000);
+      return;
+    }
     form.dataset.submitting = 'true';
     let submissionSucceeded = false;
     const submitButton = form.querySelector('[type="submit"]');
@@ -1336,6 +1624,9 @@ if (form) {
         const detail = error.details && typeof error.details === 'object'
           ? error.details.message || error.details.error
           : '';
+        if (error.details?.code === 'P0001') {
+          await loadApplicationAvailability();
+        }
         const status = error.status ? ` (HTTP ${error.status})` : '';
         const reason = detail ? ` ${detail}` : '';
         showToast(`Application could not be submitted${status}.${reason} Please try again.`, 'error', 7000);
@@ -1448,6 +1739,8 @@ $('#adminForm')?.addEventListener('submit', async (e) => {
     financeManagerAuthorized = signedInEmail === financeAdminEmail;
     setAdminRouteAuthenticated(true);
     updateFinanceAdminControls();
+    renderApplicationAvailability();
+    await loadApplicationAvailability();
 
     if (!financeManagerAuthorized) {
       $('#adminLogin').hidden = true;
@@ -1472,6 +1765,7 @@ $('#logout')?.addEventListener('click', async () => {
   financeManagerAuthorized = false;
   setAdminRouteAuthenticated(false);
   updateFinanceAdminControls();
+  renderApplicationAvailability();
   if (supabaseClient) {
     await supabaseClient.auth.signOut().catch(console.error);
   }
@@ -1497,6 +1791,8 @@ async function restoreAdminSession() {
   financeManagerAuthorized = signedInEmail === financeAdminEmail;
   setAdminRouteAuthenticated(true);
   updateFinanceAdminControls();
+  renderApplicationAvailability();
+  await loadApplicationAvailability();
   $('#adminLogin').hidden = true;
   $('#adminDashboard').hidden = false;
   if (!isAdminRoute) open('adminModal');
@@ -1508,6 +1804,7 @@ supabaseClient?.auth.onAuthStateChange((event, session) => {
     adminAuthorized = adminEmails.includes(session.user?.email?.toLowerCase() || '');
     financeManagerAuthorized = adminAuthorized && session.user.email.toLowerCase() === financeAdminEmail;
     updateFinanceAdminControls();
+    renderApplicationAvailability();
   }
 });
 
@@ -1533,8 +1830,8 @@ $('#openAddFinanceBtn')?.addEventListener('click', () => {
 });
 
 $('#openAnnouncementModalBtn')?.addEventListener('click', () => {
-  if (!financeManagerAuthorized) {
-    showToast('Only the finance admin can manage announcements.', 'warning');
+  if (!adminAuthorized) {
+    showToast('Only an authorized admin can manage announcements.', 'warning');
     return;
   }
   resetAnnouncementForm();
@@ -1568,8 +1865,8 @@ document.addEventListener('pointerdown', (event) => {
 $('#announcementForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  if (!financeManagerAuthorized) {
-    showToast('This account can view the dashboard but cannot manage announcements.', 'warning');
+  if (!adminAuthorized) {
+    showToast('Only an authorized admin can manage announcements.', 'warning');
     return;
   }
 
@@ -1623,8 +1920,8 @@ $('#announcementForm')?.addEventListener('submit', async (e) => {
 
 $('#siteNoticeForm')?.addEventListener('submit', async (event) => {
   event.preventDefault();
-  if (!financeManagerAuthorized) {
-    showToast('Only the finance admin can manage the site notice.', 'warning');
+  if (!adminAuthorized) {
+    showToast('Only an authorized admin can manage the site notice.', 'warning');
     return;
   }
 
@@ -1683,8 +1980,8 @@ $('#siteNoticeForm')?.addEventListener('submit', async (event) => {
 });
 
 $('#newSiteNoticeBtn')?.addEventListener('click', () => {
-  if (!financeManagerAuthorized) {
-    showToast('Only the finance admin can manage site notices.', 'warning');
+  if (!adminAuthorized) {
+    showToast('Only an authorized admin can manage site notices.', 'warning');
     return;
   }
   $('#siteNoticeForm').reset();
@@ -2200,3 +2497,6 @@ if (isAdminRoute) open('adminModal');
 restoreAdminSession();
 loadAnnouncements();
 loadSiteNotices();
+loadApplicationAvailability();
+if ($('#applicationForm')) window.setInterval(loadApplicationAvailability, 30000);
+loadCompletedInterviewCount();

@@ -157,6 +157,34 @@ body {
   gap: 8px;
 }
 
+.application-availability-admin-panel .site-notice-form {
+  margin-top: 16px;
+}
+
+#applicationPauseMessageField[hidden],
+#saveApplicationPauseMessage[hidden] {
+  display: none;
+}
+
+.application-paused-notice {
+  padding: 34px;
+  background: var(--cream);
+  border: 1px solid var(--line);
+}
+
+.application-paused-notice h2 {
+  margin: 0 0 14px;
+  font: 700 clamp(30px, 4vw, 42px)/1.1 "Playfair Display", serif;
+}
+
+.application-paused-notice p:last-child {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
 .site-notice-admin-list {
   display: grid;
   gap: 10px;
@@ -755,6 +783,41 @@ em {
   font-size: 18px;
   line-height: 1.7;
   margin: 0 0 28px;
+}
+
+.interview-count {
+  display: grid;
+  gap: 12px;
+  margin: 30px 0 26px;
+  padding: 22px 24px;
+  max-width: 410px;
+  border: 1px solid var(--line);
+  background: var(--cream);
+}
+
+.interview-count-label {
+  color: var(--muted);
+  font: 500 10px "DM Mono", monospace;
+  letter-spacing: .12em;
+}
+
+.interview-count-value {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.interview-count-value strong {
+  color: var(--ink);
+  font: 700 clamp(42px, 6vw, 64px)/1 "Playfair Display", serif;
+  letter-spacing: -.06em;
+  font-variant-numeric: tabular-nums;
+}
+
+.interview-count-value span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 /* Steps Section */
@@ -2114,6 +2177,29 @@ body.admin-route .toast-container {
 
 .expanded-form textarea {
   resize: vertical;
+}
+
+.application-field-error {
+  display: block;
+  margin-top: 6px;
+  color: #b42318;
+  font: 500 11px Manrope;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.expanded-form .has-validation-error {
+  border-color: #b42318;
+}
+
+.expanded-form input[aria-invalid="true"]:not([type=checkbox]):not([type=file]),
+.expanded-form select[aria-invalid="true"],
+.expanded-form textarea[aria-invalid="true"] {
+  border-bottom-color: #b42318;
+}
+
+.upload-field.has-validation-error {
+  border-color: #b42318;
 }
 
 .form-section-title {
