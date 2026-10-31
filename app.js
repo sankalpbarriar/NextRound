@@ -23,6 +23,7 @@ let remoteApplications = [];
 let remoteFinances = null;
 let remoteSchedules = [];
 let remoteAnnouncements = null;
+let remoteSiteNotices = null;
 let applicationPage = 1;
 let activeApplicationFilter = 'All';
 const applicationsPerPage = 10;
@@ -39,6 +40,58 @@ let adminAuthorized = false;
 let financeManagerAuthorized = false;
 let announcementPanelOpen = false;
 const ANNOUNCEMENT_STORAGE_KEY = 'nextroundAnnouncements';
+const SITE_NOTICE_STORAGE_KEY = 'nextroundSiteNotice';
+const APPLICATION_SUBMISSION_KEY = 'nextroundPendingApplicationSubmission';
+let applicationSortDirection = 'desc';
+let financeSortDirection = 'desc';
+let scheduleSortDirection = 'desc';
+let pastScheduleSortDirection = 'desc';
+let announcementSortDirection = 'desc';
+
+function parseAdminDate(value) {
+  const text = String(value || '').trim();
+  let match = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])).getTime();
+  match = text.match(/^(\d{1,2})([./])(\d{1,2})\2(\d{4})$/);
+  if (match) {
+    const first = Number(match[1]);
+    const second = Number(match[3]);
+    const monthFirst = match[2] === '/' && first <= 12 && second <= 12;
+    const day = monthFirst ? second : first;
+    const month = monthFirst ? first : second;
+    return new Date(Number(match[4]), month - 1, day).getTime();
+  }
+  const parsed = new Date(text).getTime();
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function formatDateDDMMYYYY(value) {
+  if (value instanceof Date) {
+    return `${String(value.getDate()).padStart(2, '0')}/${String(value.getMonth() + 1).padStart(2, '0')}/${value.getFullYear()}`;
+  }
+  const text = String(value || '').trim();
+  let match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) return `${match[3]}/${match[2]}/${match[1]}`;
+  match = text.match(/^(\d{1,2})([./])(\d{1,2})\2(\d{4})$/);
+  if (match) {
+    const first = Number(match[1]);
+    const second = Number(match[3]);
+    const monthFirst = match[2] === '/' && first <= 12 && second <= 12;
+    const day = monthFirst ? second : first;
+    const month = monthFirst ? first : second;
+    return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${match[4]}`;
+  }
+  const date = new Date(text);
+  if (Number.isNaN(date.getTime())) return value || 'Date not provided';
+  return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+}
+
+function updateSortButton(button, direction, label) {
+  if (!button) return;
+  button.textContent = direction === 'asc' ? '↑' : '↓';
+  button.setAttribute('aria-label', `Sort ${label} by date ${direction === 'asc' ? 'ascending' : 'descending'}`);
+  button.setAttribute('title', `Sort by date ${direction === 'asc' ? 'ascending' : 'descending'}`);
+}
 
 function escapeHtml(value = '') {
   return String(value)
@@ -110,7 +163,7 @@ function renderAnnouncements() {
     <button type="button" id="closeAnnouncementsBtn" class="announcement-popup-close" aria-label="Close announcements" onclick="closeAnnouncements()">×</button>
   </div>${announcements.map(item => {
     const meetText = item.meetLink ? `<a class="announcement-link" href="${escapeHtml(item.meetLink)}" target="_blank" rel="noopener noreferrer">Join Google Meet</a>` : '';
-    const dateLabel = item.eventDate ? new Date(`${item.eventDate}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Date TBD';
+    const dateLabel = item.eventDate ? formatDateDDMMYYYY(item.eventDate) : 'Date TBD';
     const timeLabel = item.eventTime ? item.eventTime : 'Time TBD';
 
     return `
@@ -132,6 +185,114 @@ function renderAnnouncements() {
   }).join('')}`;
 }
 
+function getSiteNotices() {
+  if (remoteSiteNotices !== null) return remoteSiteNotices;
+  if (supabaseEnabled) return [];
+  try {
+    const stored = JSON.parse(localStorage.getItem(SITE_NOTICE_STORAGE_KEY) || 'null');
+    if (Array.isArray(stored)) return stored;
+    return stored ? [{ ...stored, id: stored.id || 1 }] : [];
+  } catch (error) {
+    localStorage.removeItem(SITE_NOTICE_STORAGE_KEY);
+    return [];
+  }
+}
+
+function getActiveSiteNotice() {
+  return getSiteNotices()
+    .filter(notice => notice.active && notice.message)
+    .sort((a, b) => parseAdminDate(b.created_at || b.updated_at) - parseAdminDate(a.created_at || a.updated_at))[0] || null;
+}
+
+function renderSiteNotice() {
+  const bar = $('#siteNoticeBar');
+  const text = $('#siteNoticeText');
+  if (!bar || !text) return;
+  const notice = getActiveSiteNotice();
+  const message = notice?.active && notice.message ? String(notice.message).trim() : '';
+  bar.hidden = !message;
+  bar.classList.toggle('is-ticker', message.length > 90);
+  text.textContent = message;
+}
+
+async function loadSiteNotices() {
+  if (!supabaseEnabled) {
+    renderSiteNotice();
+    renderSiteNoticeAdminList();
+    return;
+  }
+  try {
+    remoteSiteNotices = await supabaseRequest('site_notices?select=*&order=created_at.desc,id.desc') || [];
+    renderSiteNotice();
+    renderSiteNoticeAdminList();
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function renderSiteNoticeAdminList() {
+  const list = $('#siteNoticeAdminList');
+  if (!list) return;
+  const notices = getSiteNotices().slice().sort((a, b) =>
+    parseAdminDate(b.created_at || b.updated_at) - parseAdminDate(a.created_at || a.updated_at)
+  );
+  if (!notices.length) {
+    list.innerHTML = '<p class="empty-state">No notices have been created yet.</p>';
+    return;
+  }
+  list.innerHTML = notices.map(notice => `
+    <article class="site-notice-admin-item ${notice.active ? 'is-active' : ''}">
+      <div class="site-notice-admin-copy">
+        <span class="site-notice-status">${notice.active ? 'Currently shown' : 'Past notice'}</span>
+        <p>${escapeHtml(notice.message || '')}</p>
+        <small>${formatDateDDMMYYYY(notice.created_at || notice.updated_at)}</small>
+      </div>
+      ${financeManagerAuthorized ? `<div class="announcement-admin-actions">
+        <button type="button" onclick="editSiteNotice(${Number(notice.id)})">Edit</button>
+        <button type="button" class="delete-btn" onclick="deleteSiteNotice(${Number(notice.id)})">Delete</button>
+      </div>` : '<span class="site-notice-status">Read only</span>'}
+    </article>
+  `).join('');
+}
+
+window.editSiteNotice = function (id) {
+  if (!financeManagerAuthorized) {
+    showToast('Only the finance admin can manage site notices.', 'warning');
+    return;
+  }
+  const notice = getSiteNotices().find(item => String(item.id) === String(id));
+  if (!notice) return;
+  $('#siteNoticeRecordId').value = notice.id;
+  $('#siteNoticeMessage').value = notice.message || '';
+  $('#siteNoticeActive').checked = Boolean(notice.active);
+  $('#siteNoticeForm').hidden = false;
+  $('#siteNoticeSubmitBtn').textContent = 'Update notice';
+  $('#siteNoticeMessage').focus();
+};
+
+window.deleteSiteNotice = async function (id) {
+  if (!financeManagerAuthorized) {
+    showToast('Only the finance admin can manage site notices.', 'warning');
+    return;
+  }
+  if (!confirm('Delete this notice from the notice history?')) return;
+  try {
+    if (supabaseEnabled) {
+      await supabaseRequest(`site_notices?id=eq.${id}`, { method: 'DELETE' });
+      await loadSupabaseData();
+    } else {
+      remoteSiteNotices = getSiteNotices().filter(notice => String(notice.id) !== String(id));
+      localStorage.setItem(SITE_NOTICE_STORAGE_KEY, JSON.stringify(remoteSiteNotices));
+      renderSiteNotice();
+      renderSiteNoticeAdminList();
+    }
+    showToast('Notice deleted.', 'success');
+  } catch (error) {
+    console.error(error);
+    showToast(`Unable to delete the notice: ${error.message || 'Check your Supabase policies.'}`, 'error');
+  }
+};
+
 window.closeAnnouncements = function () {
   announcementPanelOpen = false;
   const panel = $('#liveAnnouncements');
@@ -147,11 +308,11 @@ function renderAnnouncementAdminList() {
   const list = $('#announcementAdminList');
   if (!list) return;
 
-  const announcements = getAnnouncements().sort((a, b) => {
-    const dateA = a.eventDate ? new Date(`${a.eventDate}T00:00:00`).getTime() : 0;
-    const dateB = b.eventDate ? new Date(`${b.eventDate}T00:00:00`).getTime() : 0;
-    return dateB - dateA;
+  const announcements = getAnnouncements().slice().sort((a, b) => {
+    const difference = parseAdminDate(a.eventDate) - parseAdminDate(b.eventDate);
+    return announcementSortDirection === 'asc' ? difference : -difference;
   });
+  updateSortButton($('#announcementDateSort'), announcementSortDirection, 'announcements');
 
   if (!announcements.length) {
     list.innerHTML = '<p class="empty-state">No announcements yet. Use “Add Announcement” to publish a live session.</p>';
@@ -160,7 +321,7 @@ function renderAnnouncementAdminList() {
 
   list.innerHTML = announcements.map(item => {
     const active = isAnnouncementActive(item);
-    const dateLabel = item.eventDate ? new Date(`${item.eventDate}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'No date';
+    const dateLabel = item.eventDate ? formatDateDDMMYYYY(item.eventDate) : 'No date';
     return `
       <div class="announcement-admin-item ${active ? '' : 'expired'}">
         <div>
@@ -423,7 +584,8 @@ function ensureAuthorizedAdmin() {
 
 async function getSignedInUserEmail() {
   if (!supabaseClient) return '';
-  const { data: { user }, error } = await supabaseClient.auth.getUser();
+  const { data, error } = await supabaseClient.auth.getUser();
+  const user = data?.user;
   if (error || !user?.email) return '';
   return user.email.trim().toLowerCase();
 }
@@ -437,23 +599,25 @@ async function isCurrentUserAuthorized() {
 async function loadSupabaseData() {
   if (!supabaseEnabled) return;
 
-  const signedInEmail = await getSignedInUserEmail();
-  if (!signedInEmail) return;
-
   try {
+    const signedInEmail = await getSignedInUserEmail();
+    if (!signedInEmail) return;
+
     const results = await Promise.allSettled([
       supabaseRequest('applications?select=*&order=created_at.desc'),
       supabaseRequest('finance_records?select=*&order=created_at.desc'),
       supabaseRequest('scheduled_interviews?select=*&order=interview_date.desc,created_at.desc'),
-      supabaseRequest('announcements?select=*&order=event_end.asc')
+      supabaseRequest('announcements?select=*&order=event_end.asc'),
+      supabaseRequest('site_notices?select=*&order=created_at.desc,id.desc')
     ]);
 
-    const [applicationsResult, financesResult, schedulesResult, announcementsResult] = results;
+    const [applicationsResult, financesResult, schedulesResult, announcementsResult, siteNoticeResult] = results;
     const sources = [
       ['applications', applicationsResult],
       ['finance records', financesResult],
       ['scheduled interviews', schedulesResult],
-      ['announcements', announcementsResult]
+      ['announcements', announcementsResult],
+      ['site notice', siteNoticeResult]
     ];
 
     sources.forEach(([source, result]) => {
@@ -463,14 +627,19 @@ async function loadSupabaseData() {
       }
     });
 
-    if (applicationsResult.status === 'fulfilled') remoteApplications = (applicationsResult.value || []).map(mapApplication);
-    if (financesResult.status === 'fulfilled') remoteFinances = (financesResult.value || []).map(mapFinance);
-    if (schedulesResult.status === 'fulfilled') remoteSchedules = (schedulesResult.value || []).map(mapSchedule);
-    if (announcementsResult.status === 'fulfilled') remoteAnnouncements = (announcementsResult.value || []).map(mapAnnouncement);
+    if (applicationsResult.status === 'fulfilled') remoteApplications = Array.isArray(applicationsResult.value) ? applicationsResult.value.map(mapApplication) : [];
+    if (financesResult.status === 'fulfilled') remoteFinances = Array.isArray(financesResult.value) ? financesResult.value.map(mapFinance) : [];
+    if (schedulesResult.status === 'fulfilled') remoteSchedules = Array.isArray(schedulesResult.value) ? schedulesResult.value.map(mapSchedule) : [];
+    if (announcementsResult.status === 'fulfilled') remoteAnnouncements = Array.isArray(announcementsResult.value) ? announcementsResult.value.map(mapAnnouncement) : [];
+    if (siteNoticeResult.status === 'fulfilled') {
+      remoteSiteNotices = Array.isArray(siteNoticeResult.value) ? siteNoticeResult.value : [];
+      renderSiteNotice();
+      renderSiteNoticeAdminList();
+    }
     render();
   } catch (error) {
-    console.error(error);
-    showToast('Supabase could not be loaded. Check supabase-config.js and your RLS policies.', 'error');
+    captureClientError('dashboard-load', error);
+    showToast(`Dashboard load failed: ${error.message || 'Check Supabase configuration and policies.'}`, 'error', 7000);
   }
 }
 
@@ -521,6 +690,7 @@ const PAST_SCHEDULE_PAGE_SIZE = 10;
 function updateFinanceAdminControls() {
   const addFinanceButton = $('#openAddFinanceBtn');
   const addAnnouncementButton = $('#openAnnouncementModalBtn');
+  const addSiteNoticeButton = $('#newSiteNoticeBtn');
 
   if (addFinanceButton) {
     addFinanceButton.hidden = !financeManagerAuthorized;
@@ -530,6 +700,11 @@ function updateFinanceAdminControls() {
   if (addAnnouncementButton) {
     addAnnouncementButton.hidden = !financeManagerAuthorized;
     addAnnouncementButton.style.display = financeManagerAuthorized ? '' : 'none';
+  }
+
+  if (addSiteNoticeButton) {
+    addSiteNoticeButton.hidden = !financeManagerAuthorized;
+    addSiteNoticeButton.style.display = financeManagerAuthorized ? '' : 'none';
   }
 }
 
@@ -565,7 +740,12 @@ function renderFinances() {
   if (!tableBody) return;
 
   // Filter records
-  let filtered = allFinances.slice().reverse(); // Show latest first
+  let filtered = allFinances.slice();
+  filtered.sort((a, b) => {
+    const difference = parseAdminDate(a.date) - parseAdminDate(b.date);
+    return financeSortDirection === 'asc' ? difference : -difference;
+  });
+  updateSortButton($('#financeDateSort'), financeSortDirection, 'finance records');
 
   if (activeFinanceFilter === 'Pending') {
     filtered = filtered.filter(item => item.status !== 'Settled');
@@ -604,7 +784,7 @@ function renderFinances() {
 
     return `
       <tr data-id="${item.id}">
-        <td><strong>${item.date || '—'}</strong></td>
+        <td><strong>${item.date ? formatDateDDMMYYYY(item.date) : '—'}</strong></td>
         <td class="candidate-name-cell">${item.candidate || 'Unnamed'}</td>
         <td class="taken-by-cell">${item.takenBy || 'Not assigned'}</td>
         <td class="amount-cell">₹${item.amount || 0}</td>
@@ -626,10 +806,7 @@ function renderFinances() {
 }
 
 function formatScheduleDate(value) {
-  const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return value || 'Date not provided';
-  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
-    .toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  return formatDateDDMMYYYY(value);
 }
 
 function renderSchedules() {
@@ -637,8 +814,16 @@ function renderSchedules() {
   const pastTableBody = $('#pastScheduleTableBody');
   if (!tableBody || !pastTableBody) return;
 
-  const scheduled = remoteSchedules.filter(item => item.status !== 'Done');
-  const past = remoteSchedules.filter(item => item.status === 'Done');
+  const scheduled = remoteSchedules.filter(item => item.status !== 'Done').slice().sort((a, b) => {
+    const difference = parseAdminDate(a.interviewDate) - parseAdminDate(b.interviewDate);
+    return scheduleSortDirection === 'asc' ? difference : -difference;
+  });
+  const past = remoteSchedules.filter(item => item.status === 'Done').slice().sort((a, b) => {
+    const difference = parseAdminDate(a.interviewDate) - parseAdminDate(b.interviewDate);
+    return pastScheduleSortDirection === 'asc' ? difference : -difference;
+  });
+  updateSortButton($('#scheduleDateSort'), scheduleSortDirection, 'scheduled interviews');
+  updateSortButton($('#pastScheduleDateSort'), pastScheduleSortDirection, 'past interviews');
   const totalPastPages = Math.max(1, Math.ceil(past.length / PAST_SCHEDULE_PAGE_SIZE));
   pastSchedulePage = Math.min(pastSchedulePage, totalPastPages);
   const pastPageRows = past.slice(
@@ -865,13 +1050,7 @@ function formatApplicationTimestamp(value) {
   if (!value) return 'Time unavailable';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'Time unavailable';
-  return date.toLocaleString('en-IN', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit'
-  });
+  return `${formatDateDDMMYYYY(date)}, ${date.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}`;
 }
 
 function getLocalDateKey(date) {
@@ -902,7 +1081,7 @@ function renderApplications() {
   const websiteApplications = supabaseEnabled ? remoteApplications : applications;
   const allApplications = websiteApplications.slice().sort((a, b) => {
     const dateDifference = new Date(getApplicationTimestamp(b) || 0) - new Date(getApplicationTimestamp(a) || 0);
-    if (dateDifference) return dateDifference;
+    if (dateDifference) return applicationSortDirection === 'asc' ? -dateDifference : dateDifference;
     return Number(b.id || 0) - Number(a.id || 0);
   });
   const all = activeApplicationFilter === 'All'
@@ -964,7 +1143,7 @@ function renderApplications() {
         ${field('Branch', a.branch)}
         ${field('Technologies you know', a.technology)}
         ${field('Languages you know', a.languages)}
-        ${field('Preferred interview date', a.preferredDate)}
+        ${field('Preferred interview date', a.preferredDate ? formatDateDDMMYYYY(a.preferredDate) : '')}
         ${field('Preferred interview format', a.format)}
         ${field('Anything we should know?', a.notes)}
         ${field('Payment screenshot / proof', a.paymentProof)}
@@ -998,7 +1177,7 @@ function renderApplications() {
           ${field('Branch', application.branch)}
           ${field('Technologies you know', application.technology)}
           ${field('Languages you know', application.languages)}
-          ${field('Preferred interview date', application.preferredDate)}
+          ${field('Preferred interview date', application.preferredDate ? formatDateDDMMYYYY(application.preferredDate) : '')}
           ${field('Preferred interview format', application.format)}
           ${field('Anything we should know?', application.notes)}
           ${field('Payment screenshot / proof', application.paymentProof)}
@@ -1027,11 +1206,23 @@ function renderApplications() {
 }
 
 function render() {
-  renderFinances();
-  renderSchedules();
-  renderApplications();
-  renderAnnouncements();
-  renderAnnouncementAdminList();
+  const sections = [
+    ['Finance records', renderFinances],
+    ['Interview schedules', renderSchedules],
+    ['Candidate applications', renderApplications],
+    ['Live announcements', renderAnnouncements],
+    ['Event announcement history', renderAnnouncementAdminList],
+    ['Homepage notice', renderSiteNotice],
+    ['Homepage notice history', renderSiteNoticeAdminList]
+  ];
+  sections.forEach(([label, renderSection]) => {
+    try {
+      renderSection();
+    } catch (error) {
+      captureClientError(`${label.toLowerCase().replaceAll(' ', '-')}-render`, error);
+      showToast(`${label} could not be displayed: ${error.message || 'Check the browser console.'}`, 'error', 7000);
+    }
+  });
 }
 
 // ==========================================================
@@ -1070,12 +1261,27 @@ if (form) {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (form.dataset.submitting === 'true') return;
+    form.dataset.submitting = 'true';
+    const submitButton = form.querySelector('[type="submit"]');
+    const submitLabel = submitButton?.textContent || '';
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = 'Submitting...';
+    }
+
+    try {
     const data = Object.fromEntries(new FormData(form));
     const file = form.querySelector('[type=file]');
     if (file?.files[0]) data.paymentProof = file.files[0].name;
 
     if (supabaseEnabled) {
       try {
+        let submissionId = sessionStorage.getItem(APPLICATION_SUBMISSION_KEY);
+        if (!submissionId) {
+          submissionId = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          sessionStorage.setItem(APPLICATION_SUBMISSION_KEY, submissionId);
+        }
         let paymentProofPath = null;
         if (file?.files[0]) {
           const safeName = file.files[0].name.replace(/[^a-zA-Z0-9._-]/g, '-');
@@ -1099,27 +1305,44 @@ if (form) {
           }
         }
 
-        await supabaseRequest('applications', {
-          method: 'POST',
-          headers: { Prefer: 'return=minimal' },
-          body: JSON.stringify({
-            name: data.name,
-            email: data.email,
-            whatsapp: data.whatsapp,
-            college: data.college,
-            semester: data.semester,
-            branch: data.branch,
-            technology: data.technology,
-            languages: data.languages,
-            source: 'Website',
-            session_type: normalizeSessionType(data.sessionType),
-            preferred_date: data.preferredDate || null,
-            interview_format: data.format || null,
-            notes: data.notes || null,
-            payment_proof_url: paymentProofPath
-          })
-        });
+        const applicationPayload = {
+          submission_id: submissionId,
+          name: data.name,
+          email: data.email,
+          whatsapp: data.whatsapp,
+          college: data.college,
+          semester: data.semester,
+          branch: data.branch,
+          technology: data.technology,
+          languages: data.languages,
+          source: 'Website',
+          session_type: normalizeSessionType(data.sessionType),
+          preferred_date: data.preferredDate || null,
+          interview_format: data.format || null,
+          notes: data.notes || null,
+          payment_proof_url: paymentProofPath
+        };
 
+        try {
+          await supabaseRequest('applications?on_conflict=submission_id', {
+            method: 'POST',
+            headers: { Prefer: 'resolution=ignore-duplicates,return=minimal' },
+            body: JSON.stringify(applicationPayload)
+          });
+        } catch (error) {
+          const schemaErrorCodes = ['PGRST204', '42703', '42P10'];
+          if (!schemaErrorCodes.includes(error.details?.code)) throw error;
+
+          captureClientError('application-submit-schema-fallback', error);
+          const { submission_id, ...legacyApplicationPayload } = applicationPayload;
+          await supabaseRequest('applications', {
+            method: 'POST',
+            headers: { Prefer: 'return=minimal' },
+            body: JSON.stringify(legacyApplicationPayload)
+          });
+        }
+
+        sessionStorage.removeItem(APPLICATION_SUBMISSION_KEY);
         form.reset();
         updateApplicationForm();
         const label = $('#fileName');
@@ -1129,7 +1352,12 @@ if (form) {
         return;
       } catch (error) {
         captureClientError('application-submit', error);
-        showToast('Failed to submit the form. Error code: SUBMIT_FAILED.', 'error', 5000);
+        const detail = error.details && typeof error.details === 'object'
+          ? error.details.message || error.details.error
+          : '';
+        const status = error.status ? ` (HTTP ${error.status})` : '';
+        const reason = detail ? ` ${detail}` : '';
+        showToast(`Application could not be submitted${status}.${reason} Please try again.`, 'error', 7000);
         return;
       }
     }
@@ -1172,6 +1400,13 @@ if (form) {
     if (label) label.textContent = 'Choose image or PDF';
     showToast('Application submitted successfully.', 'success');
     open('successModal');
+    } finally {
+      delete form.dataset.submitting;
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = submitLabel;
+      }
+    }
   });
 }
 
@@ -1293,13 +1528,6 @@ supabaseClient?.auth.onAuthStateChange((event, session) => {
   }
 });
 
-$('#clearApplications')?.addEventListener('click', () => {
-  if (!confirm('Clear demo website submissions?')) return;
-  applications.splice(0);
-  save();
-  renderApplications();
-});
-
 // Record Session Modal Form
 $('#openAddFinanceBtn')?.addEventListener('click', () => {
   if (!financeManagerAuthorized) {
@@ -1408,6 +1636,106 @@ $('#announcementForm')?.addEventListener('submit', async (e) => {
     console.error(error);
     showToast(`Unable to save announcement: ${error.message || 'Check your Supabase policies.'}`, 'error');
   }
+});
+
+$('#siteNoticeForm')?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  if (!financeManagerAuthorized) {
+    showToast('Only the finance admin can manage the site notice.', 'warning');
+    return;
+  }
+
+  const noticeId = $('#siteNoticeRecordId').value;
+  const notice = {
+    message: $('#siteNoticeMessage').value.trim(),
+    active: $('#siteNoticeActive').checked,
+    updated_at: new Date().toISOString()
+  };
+  if (notice.active && !notice.message) {
+    showToast('Enter a message before publishing the site notice.', 'warning');
+    return;
+  }
+
+  try {
+    if (supabaseEnabled) {
+      if (notice.active) {
+        await supabaseRequest('site_notices?active=eq.true', {
+          method: 'PATCH',
+          headers: { Prefer: 'return=minimal' },
+          body: JSON.stringify({ active: false })
+        });
+      }
+      await supabaseRequest(noticeId ? `site_notices?id=eq.${noticeId}` : 'site_notices', {
+        method: noticeId ? 'PATCH' : 'POST',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify(notice)
+      });
+      await loadSupabaseData();
+    } else {
+      remoteSiteNotices = getSiteNotices().map(item => ({
+        ...item,
+        active: notice.active ? false : item.active
+      }));
+      const existingIndex = remoteSiteNotices.findIndex(item => String(item.id) === String(noticeId));
+      const savedNotice = {
+        ...notice,
+        id: noticeId || Date.now(),
+        created_at: existingIndex >= 0 ? remoteSiteNotices[existingIndex].created_at : new Date().toISOString()
+      };
+      if (existingIndex >= 0) remoteSiteNotices[existingIndex] = savedNotice;
+      else remoteSiteNotices.unshift(savedNotice);
+      localStorage.setItem(SITE_NOTICE_STORAGE_KEY, JSON.stringify(remoteSiteNotices));
+      renderSiteNotice();
+      renderSiteNoticeAdminList();
+    }
+    $('#siteNoticeForm').reset();
+    $('#siteNoticeRecordId').value = '';
+    $('#siteNoticeForm').hidden = true;
+    $('#siteNoticeSubmitBtn').textContent = 'Save notice';
+    showToast('Site notice saved.', 'success');
+  } catch (error) {
+    console.error(error);
+    showToast(`Unable to save the site notice: ${error.message || 'Check your Supabase policies.'}`, 'error');
+  }
+});
+
+$('#newSiteNoticeBtn')?.addEventListener('click', () => {
+  if (!financeManagerAuthorized) {
+    showToast('Only the finance admin can manage site notices.', 'warning');
+    return;
+  }
+  $('#siteNoticeForm').reset();
+  $('#siteNoticeRecordId').value = '';
+  $('#siteNoticeActive').checked = true;
+  $('#siteNoticeSubmitBtn').textContent = 'Save notice';
+  $('#siteNoticeForm').hidden = false;
+  $('#siteNoticeMessage').focus();
+});
+
+$('#cancelSiteNoticeEdit')?.addEventListener('click', () => {
+  $('#siteNoticeForm').reset();
+  $('#siteNoticeRecordId').value = '';
+  $('#siteNoticeForm').hidden = true;
+});
+
+$('#scheduleDateSort')?.addEventListener('click', () => {
+  scheduleSortDirection = scheduleSortDirection === 'asc' ? 'desc' : 'asc';
+  renderSchedules();
+});
+
+$('#pastScheduleDateSort')?.addEventListener('click', () => {
+  pastScheduleSortDirection = pastScheduleSortDirection === 'asc' ? 'desc' : 'asc';
+  renderSchedules();
+});
+
+$('#financeDateSort')?.addEventListener('click', () => {
+  financeSortDirection = financeSortDirection === 'asc' ? 'desc' : 'asc';
+  renderFinances();
+});
+
+$('#announcementDateSort')?.addEventListener('click', () => {
+  announcementSortDirection = announcementSortDirection === 'asc' ? 'desc' : 'asc';
+  renderAnnouncementAdminList();
 });
 
 $('#recordForm')?.addEventListener('submit', (e) => {
@@ -1628,9 +1956,85 @@ $('#tabAnnouncementsBtn')?.addEventListener('click', () => {
 // ==========================================================
 // Moving Feedback Carousel
 // ==========================================================
+function groupFeedbackByStudent(track) {
+  const groupedCards = new Map();
+  const feedbackCards = [...track.querySelectorAll('.feedback-card')];
+
+  feedbackCards.forEach(card => {
+    const name = card.querySelector('.student-name')?.textContent.trim().toLocaleLowerCase();
+    if (!name) return;
+    const existing = groupedCards.get(name);
+    const entry = document.createElement('div');
+    entry.className = 'feedback-entry';
+    card.querySelectorAll('.feedback-lead, .feedback-body, .feedback-tags, .feedback-panelist').forEach(content => entry.append(content));
+
+    if (!existing) {
+      entry.dataset.feedbackIndex = '0';
+      card.append(entry);
+      groupedCards.set(name, card);
+      return;
+    }
+
+    const entries = existing.querySelectorAll('.feedback-entry');
+    entry.dataset.feedbackIndex = String(entries.length);
+    entry.hidden = true;
+    existing.append(entry);
+    card.remove();
+
+    let navigation = existing.querySelector('.feedback-entry-controls');
+    if (!navigation) {
+      navigation = document.createElement('div');
+      navigation.className = 'feedback-entry-controls';
+      navigation.innerHTML = '<button type="button" aria-label="Previous feedback" title="Previous feedback">←</button><span></span><button type="button" aria-label="Next feedback" title="Next feedback">→</button>';
+      existing.append(navigation);
+      const buttons = navigation.querySelectorAll('button');
+      buttons[0].addEventListener('click', () => showFeedbackEntry(existing, -1));
+      buttons[1].addEventListener('click', () => showFeedbackEntry(existing, 1));
+    }
+    navigation.hidden = false;
+    updateFeedbackEntryControls(existing);
+  });
+}
+
+function updateFeedbackEntryControls(card) {
+  const entries = [...card.querySelectorAll('.feedback-entry')];
+  const navigation = card.querySelector('.feedback-entry-controls');
+  if (!navigation) return;
+  const activeIndex = entries.findIndex(entry => !entry.hidden);
+  navigation.querySelector('span').textContent = `${activeIndex + 1} / ${entries.length}`;
+  navigation.querySelectorAll('button')[0].disabled = activeIndex <= 0;
+  navigation.querySelectorAll('button')[1].disabled = activeIndex >= entries.length - 1;
+}
+
+function showFeedbackEntry(card, offset) {
+  const entries = [...card.querySelectorAll('.feedback-entry')];
+  const currentIndex = entries.findIndex(entry => !entry.hidden);
+  const nextIndex = Math.max(0, Math.min(entries.length - 1, currentIndex + offset));
+  entries.forEach((entry, index) => { entry.hidden = index !== nextIndex; });
+  card.classList.remove('is-expanded');
+  card.querySelectorAll('.feedback-read-more').forEach(button => button.remove());
+  const body = entries[nextIndex]?.querySelector('.feedback-body');
+  if (body && body.scrollHeight > body.clientHeight + 1) {
+    const readMore = document.createElement('button');
+    readMore.type = 'button';
+    readMore.className = 'feedback-read-more';
+    readMore.textContent = 'Read more';
+    readMore.setAttribute('aria-expanded', 'false');
+    body.after(readMore);
+    readMore.addEventListener('click', () => {
+      const expanded = card.classList.toggle('is-expanded');
+      readMore.textContent = expanded ? 'Show less' : 'Read more';
+      readMore.setAttribute('aria-expanded', String(expanded));
+    });
+  }
+  updateFeedbackEntryControls(card);
+}
+
 function initFeedbackCarousel() {
   const track = document.getElementById('feedbackTrack');
   if (!track) return;
+
+  groupFeedbackByStudent(track);
 
   const prevBtn = document.getElementById('prevFeedback');
   const nextBtn = document.getElementById('nextFeedback');
@@ -1812,3 +2216,4 @@ if (document.readyState === 'loading') {
 if (isAdminRoute) open('adminModal');
 restoreAdminSession();
 loadAnnouncements();
+loadSiteNotices();

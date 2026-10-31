@@ -18,6 +18,10 @@
     <span>NOW TAKING APPLICATIONS</span> <span class="dot"></span> <span>MOCK INTERVIEWS</span> <span
       class="dot"></span> <span>1:1 GUIDANCE</span>
   </div>
+  <div class="site-notice-bar" id="siteNoticeBar" aria-live="polite" hidden>
+    <span class="site-notice-label">Notice</span>
+    <span class="site-notice-viewport"><span id="siteNoticeText"></span></span>
+  </div>
 
   <section id="liveAnnouncements" class="live-announcements" aria-live="polite"></section>
 
@@ -173,6 +177,7 @@
           <div class="person-companies">
             <span class="company-tag">Capgemini</span>
             <span class="company-tag">Synechron</span>
+            <span class="company-tag">Infosys</span>
           </div>
         </article>
         <article class="person-card offset">
@@ -789,7 +794,6 @@
                     Interviews</button>
                   <button type="button" class="filter-pill" data-application-filter="guidance">Guidance</button>
                 </div>
-                <button id="clearApplications" type="button">Clear demo submissions</button>
               </div>
             </div>
             <div id="applicationList">
@@ -812,7 +816,7 @@
               <table class="finances-table">
                 <thead>
                   <tr>
-                    <th>Date &amp; Time</th>
+                    <th>Date &amp; Time <button type="button" class="date-sort-btn" id="scheduleDateSort" aria-label="Sort scheduled interviews by date descending" title="Sort by date">↓</button></th>
                     <th>Candidate</th>
                     <th>Interviewer</th>
                     <th>Google Meet</th>
@@ -833,7 +837,7 @@
               <table class="finances-table">
                 <thead>
                   <tr>
-                    <th>Date &amp; Time</th>
+                    <th>Date &amp; Time <button type="button" class="date-sort-btn" id="pastScheduleDateSort" aria-label="Sort past interviews by date descending" title="Sort by date">↓</button></th>
                     <th>Candidate</th>
                     <th>Interviewer</th>
                     <th>Google Meet</th>
@@ -894,7 +898,7 @@
             <table class="finances-table">
               <thead>
                 <tr>
-                  <th>Date</th>
+                  <th>Date <button type="button" class="date-sort-btn" id="financeDateSort" aria-label="Sort finance records by date descending" title="Sort by date">↓</button></th>
                   <th>Candidate Name</th>
                   <th>Taken By / Panelist</th>
                   <th>Amount</th>
@@ -911,12 +915,34 @@
 
         <!-- TAB 4: Event Announcements -->
         <div class="tab-content" id="announcementsTab" hidden>
+          <div class="site-notice-admin-panel">
+            <div class="list-heading">
+              <div>
+                <h3>Homepage notice</h3>
+                <p class="import-note">Manage current and past messages shown at the top of the student website.</p>
+              </div>
+              <button type="button" class="button button-dark btn-sm" id="newSiteNoticeBtn">+ Add notice</button>
+            </div>
+            <form id="siteNoticeForm" class="site-notice-form" hidden>
+              <input type="hidden" id="siteNoticeRecordId">
+              <label for="siteNoticeMessage">Message
+                <textarea id="siteNoticeMessage" rows="3" maxlength="500" placeholder="Enter an update for students" required></textarea>
+              </label>
+              <label class="site-notice-toggle"><input type="checkbox" id="siteNoticeActive"> Show this notice on the website</label>
+              <div class="site-notice-form-actions">
+                <button class="button button-dark btn-sm" id="siteNoticeSubmitBtn" type="submit">Save notice</button>
+                <button class="button button-outline btn-sm" id="cancelSiteNoticeEdit" type="button">Cancel</button>
+              </div>
+            </form>
+            <div id="siteNoticeAdminList" class="site-notice-admin-list"></div>
+          </div>
           <div class="announcement-admin-panel">
             <div class="list-heading">
               <div>
                 <h3>Event announcements</h3>
                 <p class="import-note">Visible to students until the event date has passed.</p>
               </div>
+              <button type="button" class="date-sort-btn" id="announcementDateSort" aria-label="Sort announcements by date descending" title="Sort by date">↓</button>
             </div>
             <div id="announcementAdminList" class="announcement-admin-list"></div>
           </div>
@@ -1077,7 +1103,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="finance-data.js"></script>
   <script src="supabase-config.js?v=2"></script>
-  <script src="app.js?v=13"></script>
+  <script src="app.js?v=16"></script>
 </body>
 
 </html>

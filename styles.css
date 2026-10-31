@@ -48,6 +48,155 @@ body {
   background: var(--lime);
 }
 
+.site-notice-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 38px;
+  padding: 8px max(20px, calc((100vw - 1180px) / 2));
+  overflow: hidden;
+  background: var(--lime);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.site-notice-bar[hidden] {
+  display: none;
+}
+
+.site-notice-label {
+  flex: 0 0 auto;
+  font: 600 9px "DM Mono", monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.site-notice-viewport {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.site-notice-bar.is-ticker .site-notice-viewport > span {
+  display: inline-block;
+  min-width: max-content;
+  animation: site-notice-scroll 24s linear infinite;
+}
+
+@keyframes site-notice-scroll {
+  from { transform: translateX(100vw); }
+  to { transform: translateX(-100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-notice-bar.is-ticker .site-notice-viewport > span {
+    animation: none;
+    min-width: 0;
+  }
+}
+
+.date-sort-btn {
+  width: 27px;
+  height: 27px;
+  margin-left: 4px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  font: 700 14px/1 Manrope, sans-serif;
+  vertical-align: middle;
+}
+
+.date-sort-btn:hover,
+.date-sort-btn:focus-visible {
+  background: var(--ink);
+  color: var(--lime);
+}
+
+.site-notice-admin-panel {
+  padding: 18px 0 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.site-notice-form {
+  display: grid;
+  gap: 12px;
+  max-width: 680px;
+}
+
+.site-notice-form[hidden] {
+  display: none;
+}
+
+.site-notice-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.site-notice-form textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.site-notice-form .site-notice-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.site-notice-form .site-notice-toggle input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.site-notice-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.site-notice-admin-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.site-notice-admin-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(17, 18, 20, .1);
+  background: #f7f4ed;
+}
+
+.site-notice-admin-item.is-active {
+  border-left: 3px solid var(--accent);
+}
+
+.site-notice-admin-copy {
+  min-width: 0;
+}
+
+.site-notice-admin-copy p {
+  margin: 4px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.site-notice-admin-copy small,
+.site-notice-status {
+  color: var(--muted);
+  font: 500 10px "DM Mono", monospace;
+}
+
+.site-notice-status {
+  text-transform: uppercase;
+}
+
 .announcement-notification {
   position: fixed;
   z-index: 5;
@@ -983,6 +1132,47 @@ em {
   flex-direction: column;
   transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
   position: relative;
+}
+
+.feedback-entry {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.feedback-entry[hidden] {
+  display: none;
+}
+
+.feedback-entry-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 18px;
+  color: var(--muted);
+  font: 500 10px "DM Mono", monospace;
+}
+
+.feedback-entry-controls[hidden] {
+  display: none;
+}
+
+.feedback-entry-controls button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.feedback-entry-controls button:disabled {
+  opacity: .4;
+  cursor: default;
 }
 
 .feedback-card:hover {
@@ -2014,6 +2204,11 @@ body.admin-route .toast-container {
     flex: 0 0 calc((100% - 22px) / 2);
     min-width: 290px;
   }
+
+  .site-notice-admin-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 760px) {
@@ -2023,6 +2218,12 @@ body.admin-route .toast-container {
     overflow: hidden;
     font-size: 8px;
     letter-spacing: .04em;
+  }
+
+  .site-notice-bar {
+    padding-right: 16px;
+    padding-left: 16px;
+    font-size: 11px;
   }
 
   .announcement .dot {
