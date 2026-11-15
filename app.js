@@ -5,6 +5,30 @@ const isAdminRoute = new URLSearchParams(window.location.search).get('admin') ==
 
 if (isAdminRoute) document.body.classList.add('admin-route');
 
+const THEME_STORAGE_KEY = 'nextround-theme';
+const THEME_ICONS = {
+  moon: '<svg class="moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.3 15.4A8.7 8.7 0 0 1 8.6 3.7 8.8 8.8 0 1 0 20.3 15.4Z"/></svg>',
+  sun: '<svg class="sun" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>'
+};
+function setSiteTheme(theme, persist = true) {
+  const dark = theme === 'dark';
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  document.querySelectorAll('[data-theme-toggle]').forEach(button => {
+    button.innerHTML = dark ? THEME_ICONS.sun : THEME_ICONS.moon;
+    button.setAttribute('aria-pressed', String(dark));
+    button.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+    button.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
+  });
+  if (persist) localStorage.setItem(THEME_STORAGE_KEY, dark ? 'dark' : 'light');
+}
+
+setSiteTheme(localStorage.getItem(THEME_STORAGE_KEY) || 'light', false);
+document.querySelectorAll('[data-theme-toggle]').forEach(button => {
+  button.addEventListener('click', () => {
+    setSiteTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+  });
+});
+
 function readStoredArray(key) {
   const stored = localStorage.getItem(key);
 
@@ -1974,7 +1998,10 @@ $('#resumeUploadForm')?.addEventListener('submit', async event => {
 // Admin Workspace Interactions & Navigation
 // ==========================================================
 ['#openAdmin', '#openAdminFooter'].forEach(s => {
-  $(s)?.addEventListener('click', () => open('adminModal'));
+  $(s)?.addEventListener('click', event => {
+    event.preventDefault();
+    window.location.assign('admin.html');
+  });
 });
 
 document.querySelectorAll('[data-close]').forEach(b => {
@@ -2073,7 +2100,6 @@ async function restoreAdminSession() {
   await loadApplicationAvailability();
   $('#adminLogin').hidden = true;
   $('#adminDashboard').hidden = false;
-  if (!isAdminRoute) open('adminModal');
   await loadSupabaseData();
 }
 
