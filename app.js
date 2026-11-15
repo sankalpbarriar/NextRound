@@ -2598,6 +2598,52 @@ function updateFeedbackEntryControls(card) {
   navigation.querySelectorAll('button')[1].disabled = activeIndex >= entries.length - 1;
 }
 
+function feedbackBodyIsClipped(body) {
+  if (!body?.isConnected || !body.clientWidth) return false;
+
+  const bodyStyle = window.getComputedStyle(body);
+  const lineClamp = Number.parseInt(bodyStyle.webkitLineClamp || bodyStyle.getPropertyValue('-webkit-line-clamp'), 10);
+  const lineHeight = Number.parseFloat(bodyStyle.lineHeight);
+  if (!lineClamp || !Number.isFinite(lineHeight)) return false;
+
+  const fullTextMeasure = body.cloneNode(true);
+  Object.assign(fullTextMeasure.style, {
+    position: 'fixed',
+    left: '-10000px',
+    top: '0',
+    width: `${body.getBoundingClientRect().width}px`,
+    height: 'auto',
+    maxHeight: 'none',
+    display: 'block',
+    overflow: 'visible',
+    flex: 'none',
+    visibility: 'hidden'
+  });
+  fullTextMeasure.style.setProperty('-webkit-line-clamp', 'unset');
+  document.body.append(fullTextMeasure);
+  const fullHeight = fullTextMeasure.getBoundingClientRect().height;
+  fullTextMeasure.remove();
+  return fullHeight > (lineHeight * lineClamp) + 2;
+}
+
+function syncFeedbackReadMore(card, body) {
+  if (!body || card.classList.contains('is-expanded')) return;
+  card.querySelectorAll('.feedback-read-more').forEach(button => button.remove());
+  if (!feedbackBodyIsClipped(body)) return;
+
+  const readMore = document.createElement('button');
+  readMore.type = 'button';
+  readMore.className = 'feedback-read-more';
+  readMore.textContent = 'Read more';
+  readMore.setAttribute('aria-expanded', 'false');
+  body.after(readMore);
+  readMore.addEventListener('click', () => {
+    const expanded = card.classList.toggle('is-expanded');
+    readMore.textContent = expanded ? 'Show less' : 'Read more';
+    readMore.setAttribute('aria-expanded', String(expanded));
+  });
+}
+
 function showFeedbackEntry(card, offset) {
   const entries = [...card.querySelectorAll('.feedback-entry')];
   const currentIndex = entries.findIndex(entry => !entry.hidden);
@@ -2606,19 +2652,7 @@ function showFeedbackEntry(card, offset) {
   card.classList.remove('is-expanded');
   card.querySelectorAll('.feedback-read-more').forEach(button => button.remove());
   const body = entries[nextIndex]?.querySelector('.feedback-body');
-  if (body && body.scrollHeight > body.clientHeight + 1) {
-    const readMore = document.createElement('button');
-    readMore.type = 'button';
-    readMore.className = 'feedback-read-more';
-    readMore.textContent = 'Read more';
-    readMore.setAttribute('aria-expanded', 'false');
-    body.after(readMore);
-    readMore.addEventListener('click', () => {
-      const expanded = card.classList.toggle('is-expanded');
-      readMore.textContent = expanded ? 'Show less' : 'Read more';
-      readMore.setAttribute('aria-expanded', String(expanded));
-    });
-  }
+  requestAnimationFrame(() => syncFeedbackReadMore(card, body));
   updateFeedbackEntryControls(card);
 }
 
@@ -2633,23 +2667,13 @@ function initFeedbackCarousel() {
   const dotsContainer = document.getElementById('carouselDots');
   const cards = track.querySelectorAll('.feedback-card');
 
-  cards.forEach((card) => {
-    const body = card.querySelector('.feedback-body');
-    if (!body || body.scrollHeight <= body.clientHeight + 1) return;
-
-    const readMore = document.createElement('button');
-    readMore.type = 'button';
-    readMore.className = 'feedback-read-more';
-    readMore.textContent = 'Read more';
-    readMore.setAttribute('aria-expanded', 'false');
-    body.after(readMore);
-
-    readMore.addEventListener('click', () => {
-      const expanded = card.classList.toggle('is-expanded');
-      readMore.textContent = expanded ? 'Show less' : 'Read more';
-      readMore.setAttribute('aria-expanded', String(expanded));
-    });
+  const syncAllFeedbackReadMore = () => cards.forEach(card => {
+    if (card.classList.contains('is-expanded')) return;
+    syncFeedbackReadMore(card, card.querySelector('.feedback-entry:not([hidden]) .feedback-body') || card.querySelector('.feedback-body'));
   });
+  requestAnimationFrame(syncAllFeedbackReadMore);
+  window.addEventListener('resize', syncAllFeedbackReadMore);
+  document.fonts?.ready?.then(syncAllFeedbackReadMore);
   if (!cards.length) return;
 
   let isHovered = false;
