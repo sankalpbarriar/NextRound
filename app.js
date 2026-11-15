@@ -22,6 +22,7 @@ const applications = readStoredArray('nextroundApplications');
 let remoteApplications = [];
 let remoteFinances = null;
 let remoteSchedules = [];
+let pendingResumeUpload = null;
 let remoteAnnouncements = null;
 let remoteSiteNotices = null;
 let applicationPage = 1;
@@ -101,6 +102,106 @@ function escapeHtml(value = '') {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+async function hashResumeUploadToken(token) {
+  if (window.crypto?.subtle) {
+    const digest = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+    return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+  }
+  if (!supabaseClient) throw new Error('Resume upload setup is unavailable in this browser.');
+  const { data, error } = await supabaseClient.rpc('hash_resume_upload_token', { p_token: token });
+  if (error) throw error;
+  if (!/^[a-f0-9]{64}$/.test(String(data || ''))) throw new Error('Could not prepare the resume upload.');
+  return data;
+}
+
+function getAdminGlobalSearchEntries(scopeTabId) {
+  const entries = [];
+  const addRecords = (records, type, target, getTitle, getDetail) => {
+    (Array.isArray(records) ? records : []).forEach(record => {
+      entries.push({
+        type,
+        target,
+        title: getTitle(record) || type,
+        detail: getDetail(record),
+        searchable: JSON.stringify(record || {})
+      });
+    });
+  };
+
+  if (scopeTabId === 'tabApplicationsBtn') {
+    addRecords(supabaseEnabled ? remoteApplications : applications, 'Application', 'tabApplicationsBtn',
+      item => item.name || item.full_name || item.email,
+      item => [item.email, item.whatsapp, item.college, getSessionTypeLabel(item.sessionType), item.preferredDate].filter(Boolean).join(' · '));
+  } else if (scopeTabId === 'tabFinancesBtn') {
+    addRecords(Array.isArray(remoteFinances) ? remoteFinances : getFinances(), 'Finance', 'tabFinancesBtn',
+      item => item.candidate || item.candidate_name,
+      item => [`₹${item.amount || 0}`, item.status, item.date || item.interview_date, item.takenBy || item.taken_by].filter(Boolean).join(' · '));
+  } else if (scopeTabId === 'tabSchedulesBtn') {
+    addRecords(remoteSchedules, 'Scheduled interview', 'tabSchedulesBtn',
+      item => item.candidateName || item.candidateEmail,
+      item => [item.candidateEmail, item.candidatePhone, item.interviewDate, item.interviewTime, item.interviewerDetails, item.status].filter(Boolean).join(' · '));
+    addRecords((supabaseEnabled ? remoteApplications : applications).filter(item => item.resume_path), 'Resume upload', 'tabSchedulesBtn',
+      item => item.name || item.email,
+      item => [item.email, item.resume_uploaded_at ? `Uploaded ${item.resume_uploaded_at}` : 'Resume uploaded'].filter(Boolean).join(' · '));
+  } else if (scopeTabId === 'tabAnnouncementsBtn') {
+    addRecords(getAnnouncements(), 'Event announcement', 'tabAnnouncementsBtn',
+      item => item.title || item.guestName,
+      item => [item.guestName, item.eventDate, item.eventTime, item.description].filter(Boolean).join(' · '));
+    addRecords(getSiteNotices(), 'Homepage notice', 'tabAnnouncementsBtn',
+      item => item.message,
+      item => item.active ? 'Active homepage notice' : 'Inactive homepage notice');
+  }
+  if (scopeTabId === 'tabAnnouncementsBtn' && applicationAvailability) {
+    addRecords([applicationAvailability], 'Application availability', 'tabAnnouncementsBtn',
+      item => item.accepting_responses ? 'Applications open' : 'Applications paused',
+      item => item.pause_message || 'Application availability settings');
+  }
+  return entries;
+}
+
+function renderAdminGlobalSearch(query) {
+  const resultsPanel = $('#adminGlobalSearchResults');
+  if (!resultsPanel) return;
+  const normalizedQuery = String(query || '').trim().toLocaleLowerCase();
+  const activeTabId = document.querySelector('.workspace-tabs .tab-btn.active')?.id || 'tabApplicationsBtn';
+  const sectionLabels = {
+    tabApplicationsBtn: ['applications', 'Search applications…'],
+    tabSchedulesBtn: ['scheduled interviews', 'Search scheduled interviews…'],
+    tabFinancesBtn: ['finance records', 'Search finance records…'],
+    tabAnnouncementsBtn: ['announcements and notices', 'Search announcements and notices…']
+  };
+  const [sectionLabel, placeholder] = sectionLabels[activeTabId] || sectionLabels.tabApplicationsBtn;
+  const searchInput = $('#adminGlobalSearchInput');
+  if (searchInput) searchInput.placeholder = placeholder;
+  const searchLabel = document.querySelector('label[for="adminGlobalSearchInput"]');
+  if (searchLabel) searchLabel.textContent = `Search ${sectionLabel}`;
+  if (!normalizedQuery) {
+    resultsPanel.hidden = true;
+    resultsPanel.innerHTML = '';
+    return;
+  }
+  resultsPanel.hidden = false;
+  if (normalizedQuery.length < 2) {
+    resultsPanel.innerHTML = '<p class="admin-search-hint">Enter at least 2 characters to search.</p>';
+    return;
+  }
+
+  const matches = getAdminGlobalSearchEntries(activeTabId).filter(entry =>
+    `${entry.title} ${entry.detail} ${entry.searchable}`.toLocaleLowerCase().includes(normalizedQuery)
+  );
+  if (!matches.length) {
+    resultsPanel.innerHTML = '<p class="admin-search-hint">No matching admin records found.</p>';
+    return;
+  }
+  const shown = matches.slice(0, 50);
+  resultsPanel.innerHTML = `<p class="admin-search-count">${matches.length} result${matches.length === 1 ? '' : 's'}${matches.length > shown.length ? ' · showing first 50' : ''}</p>
+    <div class="admin-search-result-list">${shown.map(entry => `
+      <article class="admin-search-result">
+        <div><span>${escapeHtml(entry.type)}</span><strong>${escapeHtml(entry.title)}</strong><p>${escapeHtml(entry.detail || 'No additional details')}</p></div>
+        <button type="button" class="button button-outline btn-sm" data-admin-search-tab="${escapeHtml(entry.target)}">Open section</button>
+      </article>`).join('')}</div>`;
 }
 
 function getAnnouncements() {
@@ -727,15 +828,21 @@ async function loadCompletedInterviewCount() {
 }
 
 function normalizeSessionType(value) {
-  return String(value || '').toLowerCase() === 'guidance' ? 'guidance' : 'mock-interview';
+  const type = String(value || '').toLowerCase();
+  if (type === 'guidance') return 'guidance';
+  if (['hr-interview', 'hr interview'].includes(type)) return 'hr-interview';
+  if (['same-day-mock', 'same-day-mock-interview', 'same day mock interview'].includes(type)) return 'same-day-mock';
+  return 'mock-interview';
 }
 
 function getSessionTypeLabel(value) {
-  return normalizeSessionType(value) === 'guidance' ? '1:1 Guidance' : 'Mock Interview';
+  const type = normalizeSessionType(value);
+  return type === 'guidance' ? '1:1 Guidance' : type === 'hr-interview' ? 'HR Interview' : type === 'same-day-mock' ? 'Same-Day Mock Interview' : 'Mock Interview';
 }
 
 function getSessionAmount(value) {
-  return normalizeSessionType(value) === 'guidance' ? 49 : 79;
+  const type = normalizeSessionType(value);
+  return type === 'guidance' || type === 'hr-interview' ? (type === 'guidance' ? 49 : 99) : type === 'same-day-mock' ? 199 : 129;
 }
 
 function mapApplication(row) {
@@ -1078,6 +1185,82 @@ function renderSchedules() {
   }
 }
 
+function getResumeApplications() {
+  const source = supabaseEnabled ? remoteApplications : applications;
+  return source.filter(item => item.resume_path);
+}
+
+function renderResumeUploads() {
+  const container = $('#resumeUploadAdminList');
+  if (!container) return;
+  const resumes = getResumeApplications();
+  if (!resumes.length) {
+    container.innerHTML = '<p class="empty-state">No resumes have been uploaded yet.</p>';
+    return;
+  }
+  container.innerHTML = resumes.map(item => `
+    <article class="resume-upload-admin-row">
+      <div><strong>${escapeHtml(item.name || 'Candidate')}</strong><span>${escapeHtml(item.email || '')}</span><small class="resume-state-uploaded">Uploaded ${escapeHtml(item.resume_uploaded_at ? new Date(item.resume_uploaded_at).toLocaleString() : '')}</small></div>
+      <div class="resume-upload-actions">
+        <button type="button" class="button button-outline btn-sm" data-resume-view="${escapeHtml(item.id)}">View resume</button>
+        ${financeManagerAuthorized
+          ? `<button type="button" class="delete-row-btn" data-resume-delete="${escapeHtml(item.id)}">Delete</button>`
+          : '<span class="resume-read-only">Read only</span>'}
+      </div>
+    </article>`).join('');
+}
+
+window.deleteResumeUpload = async function (id) {
+  if (!financeManagerAuthorized) {
+    showToast('Only the finance admin can delete uploaded resumes.', 'warning');
+    return;
+  }
+  const item = getResumeApplications().find(application => String(application.id) === String(id));
+  if (!item) return;
+  if (!confirm(`Delete the uploaded resume for ${item.name || 'this candidate'}? The file will be permanently deleted.`)) return;
+  try {
+    const { error: storageError } = await supabaseClient.storage.from('candidate-resumes').remove([item.resume_path]);
+    if (storageError) throw storageError;
+    const { data, error } = await supabaseClient.rpc('delete_application_resume', { p_application_id: item.id });
+    if (error) throw error;
+    if (data !== true) throw new Error('The resume record could not be cleared.');
+    item.resume_path = null;
+    item.resume_uploaded_at = null;
+    renderResumeUploads();
+    showToast('Resume and upload record deleted.', 'success');
+  } catch (error) {
+    showToast(`Unable to delete the resume: ${error.message || 'Check Supabase policies.'}`, 'error');
+  }
+};
+
+window.openResumeUpload = async function (id) {
+  if (!adminAuthorized) return;
+  const item = getResumeApplications().find(application => String(application.id) === String(id));
+  if (!item?.resume_path) return;
+  const previewWindow = window.open('about:blank', '_blank');
+  try {
+    const { data, error } = await supabaseClient.storage.from('candidate-resumes').createSignedUrl(item.resume_path, 300);
+    if (error) throw error;
+    if (!data?.signedUrl) throw new Error('A temporary resume link could not be created.');
+    if (previewWindow) {
+      previewWindow.opener = null;
+      previewWindow.location.href = data.signedUrl;
+    } else {
+      showToast('Allow pop-ups to open the resume.', 'warning');
+    }
+  } catch (error) {
+    previewWindow?.close();
+    showToast(`Unable to open the resume: ${error.message || 'Check Supabase policies.'}`, 'error');
+  }
+};
+
+$('#resumeUploadAdminList')?.addEventListener('click', event => {
+  const viewButton = event.target.closest('[data-resume-view]');
+  const deleteButton = event.target.closest('[data-resume-delete]');
+  if (viewButton) window.openResumeUpload(viewButton.dataset.resumeView);
+  if (deleteButton) window.deleteResumeUpload(deleteButton.dataset.resumeDelete);
+});
+
 function createScheduleEmail(item) {
   const date = formatScheduleDate(item.interviewDate);
   const body = `Dear ${item.candidateName},
@@ -1098,7 +1281,7 @@ ${item.googleMeetLink}
 Please ensure that you:
 Join the meeting 5–10 minutes before the scheduled time.
 
-Keep your resume readily available.
+Keep your updated resume readily available.
 Have a stable internet connection and a quiet environment for the interview.
 The interview will closely simulate a real placement interview and will be followed by detailed feedback to help you identify your strengths and areas for improvement.`;
 
@@ -1222,7 +1405,8 @@ window.editFinanceRecord = function (id) {
   $('#recordDate').value = item.date || '';
   $('#recordCandidate').value = item.candidate || '';
   $('#recordTakenBy').value = item.takenBy || '';
-  $('#recordAmount').value = item.amount || 79;
+  $('#recordSessionType').value = normalizeSessionType(item.sessionType);
+  $('#recordAmount').value = item.amount || getSessionAmount(item.sessionType);
   $('#recordStatus').value = item.status || 'Settled';
 
   $('#recordModalEyebrow').textContent = 'EDIT SESSION & SETTLEMENT';
@@ -1422,6 +1606,7 @@ function render() {
   const sections = [
     ['Finance records', renderFinances],
     ['Interview schedules', renderSchedules],
+    ['Resume uploads', renderResumeUploads],
     ['Candidate applications', renderApplications],
     ['Live announcements', renderAnnouncements],
     ['Event announcement history', renderAnnouncementAdminList],
@@ -1444,6 +1629,10 @@ function render() {
 const form = $('#applicationForm');
 if (form) {
   const sessionTypeField = $('#sessionType');
+  const requestedSessionType = new URLSearchParams(window.location.search).get('session');
+  if (sessionTypeField && ['mock-interview', 'same-day-mock', 'guidance', 'hr-interview'].includes(requestedSessionType)) {
+    sessionTypeField.value = requestedSessionType;
+  }
   const clearApplicationFieldError = (control) => {
     const label = control.closest('label');
     const error = label?.querySelector(`[data-validation-for="${control.name}"]`);
@@ -1496,7 +1685,24 @@ if (form) {
     return true;
   };
   const updateApplicationForm = () => {
-    const isGuidance = normalizeSessionType(sessionTypeField?.value) === 'guidance';
+    const sessionType = normalizeSessionType(sessionTypeField?.value);
+    const isGuidance = sessionType === 'guidance';
+    const isSameDay = sessionType === 'same-day-mock';
+    const isHrInterview = sessionType === 'hr-interview';
+    const preferredDate = form.querySelector('[name="preferredDate"]');
+    const preferredDateField = form.querySelector('[data-preferred-date-field]');
+    if (preferredDate) {
+      const today = new Date();
+      const todayValue = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      const firstAvailableDate = new Date(today);
+      if (!isSameDay) firstAvailableDate.setDate(firstAvailableDate.getDate() + 1);
+      const minimumDate = `${firstAvailableDate.getFullYear()}-${String(firstAvailableDate.getMonth() + 1).padStart(2, '0')}-${String(firstAvailableDate.getDate()).padStart(2, '0')}`;
+      preferredDate.min = minimumDate;
+      preferredDate.hidden = isSameDay;
+      preferredDate.required = !isGuidance && !isSameDay;
+      preferredDate.value = isSameDay ? todayValue : '';
+    }
+    if (preferredDateField) preferredDateField.hidden = isSameDay;
     document.querySelectorAll('[data-guidance-hide]').forEach(group => {
       group.hidden = isGuidance;
       group.style.display = isGuidance ? 'none' : '';
@@ -1513,13 +1719,19 @@ if (form) {
     const paymentQr = $('#paymentQr');
     const formTimeEstimate = $('#formTimeEstimate');
     if (formTimeEstimate) formTimeEstimate.textContent = isGuidance ? '~2 minutes' : '~5 minutes';
-    if (paymentTitle) paymentTitle.innerHTML = isGuidance ? '1:1 guidance<br><em>₹49</em>' : 'Mock interview<br><em>₹79</em>';
+    if (paymentTitle) paymentTitle.innerHTML = isGuidance ? '1:1 guidance<br><em>₹49</em>' : isHrInterview ? 'HR interview<br><em>₹99</em>' : isSameDay ? 'Same-day mock interview<br><em>₹199</em>' : 'Mock interview<br><em>₹129</em>';
     if (paymentQr) {
-      paymentQr.src = isGuidance ? 'assets/1-1%20guidance%20qr.jpeg' : 'assets/nextround-payment-qr.png';
-      paymentQr.alt = isGuidance ? 'NextRound 1:1 guidance payment QR' : 'NextRound payment QR';
+      const qrBySession = {
+        guidance: 'assets/1%20on%201%2049.png',
+        'hr-interview': 'assets/HR%2099.png',
+        'same-day-mock': 'assets/same%20day%20199.png',
+        'mock-interview': 'assets/standard%20mock%20129.png'
+      };
+      paymentQr.src = qrBySession[sessionType] || qrBySession['mock-interview'];
+      paymentQr.alt = `NextRound ${getSessionTypeLabel(sessionType)} payment QR`;
     }
-    if (paymentDescription) paymentDescription.textContent = isGuidance
-      ? 'Scan the official NextRound QR, make payment, then upload a screenshot below.'
+    if (paymentDescription) paymentDescription.textContent = isSameDay
+      ? 'Same-day slots depend on interviewer availability. Scan the official NextRound QR for ₹199, then upload your payment screenshot.'
       : 'Scan the official NextRound QR, make payment, then upload a screenshot below.';
   };
 
@@ -1587,6 +1799,10 @@ if (form) {
             throw error;
           }
         }
+        if (!window.crypto?.getRandomValues) throw new Error('Secure random generation is unavailable in this browser.');
+        const resumeTokenBytes = window.crypto.getRandomValues(new Uint8Array(32));
+        const resumeToken = Array.from(resumeTokenBytes, byte => byte.toString(16).padStart(2, '0')).join('');
+        const resumeTokenHash = await hashResumeUploadToken(resumeToken);
         const applicationPayload = {
           name: data.name,
           email: data.email,
@@ -1601,7 +1817,8 @@ if (form) {
           preferred_date: data.preferredDate || null,
           interview_format: data.format || null,
           notes: data.notes || null,
-          payment_proof_url: paymentProofPath
+          payment_proof_url: paymentProofPath,
+          resume_upload_token_hash: resumeTokenHash
         };
         await supabaseRequest('applications', {
           method: 'POST',
@@ -1611,10 +1828,19 @@ if (form) {
           },
           body: JSON.stringify(applicationPayload)
         });
+        const { data: applicationId, error: applicationIdError } = await supabaseClient.rpc('application_id_for_resume_token', { p_token_hash: resumeTokenHash });
+        if (applicationIdError) console.error('Could not prepare the resume upload step:', applicationIdError);
+        pendingResumeUpload = applicationId ? { applicationId, tokenHash: resumeTokenHash } : null;
         form.reset();
         updateApplicationForm();
         const label = $('#fileName');
         if (label) label.textContent = 'Choose image or PDF';
+        $('#resumeUploadSection').hidden = false;
+        $('#resumeUploadStatus').textContent = pendingResumeUpload ? '' : 'Your application was received, but resume upload is temporarily unavailable. Please contact the NextRound team.';
+        $('#resumeFile').value = '';
+        $('#resumeUploadForm').hidden = !pendingResumeUpload;
+        $('#resumeUploadButton').disabled = false;
+        $('#resumeUploadButton').textContent = 'Upload resume';
         showToast('Application submitted successfully. Someone from the team will contact you.', 'success');
         open('successModal');
         submissionSucceeded = true;
@@ -1691,6 +1917,58 @@ if (upload) {
     $('#fileName').textContent = upload.files[0]?.name || 'Choose image or PDF';
   });
 }
+
+$('#resumeUploadForm')?.addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!pendingResumeUpload || !supabaseClient) return;
+  const fileInput = $('#resumeFile');
+  const file = fileInput?.files?.[0];
+  if (!file) return;
+  const extension = file.name.split('.').pop().toLowerCase();
+  if (!['pdf', 'doc', 'docx'].includes(extension)) {
+    $('#resumeUploadStatus').textContent = 'Choose a PDF, DOC, or DOCX file.';
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    $('#resumeUploadStatus').textContent = 'The resume must be 10 MB or smaller.';
+    return;
+  }
+
+  const button = $('#resumeUploadButton');
+  button.disabled = true;
+  button.textContent = 'Uploading…';
+  $('#resumeUploadStatus').textContent = 'Uploading your resume…';
+  try {
+    const objectPath = `${pendingResumeUpload.applicationId}/${pendingResumeUpload.tokenHash}/resume.${extension}`;
+    const contentTypes = {
+      pdf: 'application/pdf',
+      doc: 'application/msword',
+      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    };
+    const { error: uploadError } = await supabaseClient.storage.from('candidate-resumes').upload(objectPath, file, {
+      cacheControl: '3600',
+      contentType: contentTypes[extension],
+      upsert: true
+    });
+    if (uploadError) throw uploadError;
+    const { data, error } = await supabaseClient.rpc('complete_application_resume', {
+      p_application_id: pendingResumeUpload.applicationId,
+      p_token_hash: pendingResumeUpload.tokenHash,
+      p_object_path: objectPath
+    });
+    if (error) throw error;
+    if (data !== true) throw new Error('The resume could not be linked to your application. Please contact the NextRound team.');
+    $('#resumeUploadStatus').textContent = 'Your updated resume was uploaded successfully. Thank you.';
+    $('#resumeUploadForm').hidden = true;
+    button.textContent = 'Resume uploaded';
+    pendingResumeUpload = null;
+  } catch (error) {
+    console.error('Resume upload failed:', error);
+    $('#resumeUploadStatus').textContent = error.message || 'Your resume could not be uploaded. Please try again.';
+    button.disabled = false;
+    button.textContent = 'Upload resume';
+  }
+});
 
 // ==========================================================
 // Admin Workspace Interactions & Navigation
@@ -1823,7 +2101,8 @@ $('#openAddFinanceBtn')?.addEventListener('click', () => {
   $('#recordDate').value = `${dd}.${mm}.${yyyy}`;
   $('#recordCandidate').value = '';
   $('#recordTakenBy').value = '';
-  $('#recordAmount').value = 79;
+  $('#recordSessionType').value = 'mock-interview';
+  $('#recordAmount').value = 129;
   $('#recordStatus').value = 'Settled';
   $('#recordModalEyebrow').textContent = 'RECORD SESSION & PAYMENT';
   open('recordModal');
@@ -2036,7 +2315,8 @@ $('#recordForm')?.addEventListener('submit', (e) => {
       item.date = $('#recordDate').value.trim();
       item.candidate = $('#recordCandidate').value.trim();
       item.takenBy = $('#recordTakenBy').value.trim();
-      item.amount = Number($('#recordAmount').value) || 79;
+      item.sessionType = normalizeSessionType($('#recordSessionType').value);
+      item.amount = Number($('#recordAmount').value) || getSessionAmount(item.sessionType);
       item.status = $('#recordStatus').value;
     }
   } else {
@@ -2046,7 +2326,8 @@ $('#recordForm')?.addEventListener('submit', (e) => {
       date: $('#recordDate').value.trim(),
       candidate: $('#recordCandidate').value.trim(),
       takenBy: $('#recordTakenBy').value.trim() || 'Pending Assignment',
-      amount: Number($('#recordAmount').value) || 79,
+      amount: Number($('#recordAmount').value) || getSessionAmount($('#recordSessionType').value),
+      sessionType: normalizeSessionType($('#recordSessionType').value),
       status: $('#recordStatus').value
     });
   }
@@ -2056,8 +2337,9 @@ $('#recordForm')?.addEventListener('submit', (e) => {
       interview_date: toDatabaseDate($('#recordDate').value.trim()),
       candidate: $('#recordCandidate').value.trim(),
       taken_by: $('#recordTakenBy').value.trim() || 'Pending Assignment',
-      amount: Number($('#recordAmount').value) || 79,
-      status: $('#recordStatus').value
+      amount: Number($('#recordAmount').value) || getSessionAmount($('#recordSessionType').value),
+      status: $('#recordStatus').value,
+      session_type: normalizeSessionType($('#recordSessionType').value)
     };
     const request = recId
       ? supabaseRequest(`finance_records?id=eq.${recId}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(payload) })
@@ -2072,6 +2354,10 @@ $('#recordForm')?.addEventListener('submit', (e) => {
   close('recordModal');
   renderFinances();
   if (!supabaseEnabled) showToast('Finance record saved.', 'success');
+});
+
+$('#recordSessionType')?.addEventListener('change', event => {
+  $('#recordAmount').value = getSessionAmount(event.target.value);
 });
 
 $('#openScheduleInterviewBtn')?.addEventListener('click', () => {
@@ -2500,3 +2786,38 @@ loadSiteNotices();
 loadApplicationAvailability();
 if ($('#applicationForm')) window.setInterval(loadApplicationAvailability, 30000);
 loadCompletedInterviewCount();
+
+$('#faqToggle')?.addEventListener('click', event => {
+  const button = event.currentTarget;
+  const expanded = button.getAttribute('aria-expanded') === 'true';
+  document.querySelectorAll('[data-faq-extra]').forEach(item => { item.hidden = expanded; });
+  button.setAttribute('aria-expanded', String(!expanded));
+  button.textContent = expanded ? 'Show all FAQs' : 'Show fewer FAQs';
+});
+
+$('#adminGlobalSearchInput')?.addEventListener('input', event => {
+  renderAdminGlobalSearch(event.currentTarget.value);
+});
+
+function refreshAdminGlobalSearchScope() {
+  const input = $('#adminGlobalSearchInput');
+  if (input) renderAdminGlobalSearch(input.value);
+}
+
+$('.workspace-tabs')?.addEventListener('click', event => {
+  if (event.target.closest('.tab-btn')) refreshAdminGlobalSearchScope();
+});
+
+$('#adminGlobalSearchResults')?.addEventListener('click', event => {
+  const button = event.target.closest('[data-admin-search-tab]');
+  if (!button) return;
+  const targetTab = document.getElementById(button.dataset.adminSearchTab);
+  targetTab?.click();
+  const sectionIds = {
+    tabApplicationsBtn: 'applicationsTab',
+    tabSchedulesBtn: 'schedulesTab',
+    tabFinancesBtn: 'financesTab',
+    tabAnnouncementsBtn: 'announcementsTab'
+  };
+  document.getElementById(sectionIds[button.dataset.adminSearchTab])?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});

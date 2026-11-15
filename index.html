@@ -14,7 +14,7 @@
 </head>
 
 <body>
-  <div class="announcement">
+  <div class="announcement" id="top">
     <span>NOW TAKING APPLICATIONS</span> <span class="dot"></span> <span>MOCK INTERVIEWS</span> <span
       class="dot"></span> <span>1:1 GUIDANCE</span>
   </div>
@@ -40,6 +40,7 @@
       <a href="#plans">Plans</a>
       <a href="#panel">Our panel</a>
       <a href="#feedback">Student feedback</a>
+      <a href="#faq">FAQ</a>
     </nav>
     <div class="header-actions">
       <div class="header-socials">
@@ -122,7 +123,7 @@
           <span>02</span>
           <div class="step-icon">◌</div>
           <h3>Complete payment</h3>
-          <p>Pay ₹79 through our QR and upload your payment screenshot.</p>
+          <p>Mock interviews are ₹129, HR interviews are ₹99, 1:1 guidance is ₹49, and same-day mock interviews are ₹199. Upload your payment screenshot with your application.</p>
         </article>
         <article>
           <span>03</span>
@@ -149,11 +150,35 @@
             <li>Structured feedback & scorecard</li>
             <li>Action plan for your next round</li>
           </ul>
-          <p class="price">₹79 / session</p>
-          <a href="apply.html" class="button button-outline">Choose Mock Interview →</a>
+          <p class="price">₹129 / session</p>
+          <a href="apply.html?session=mock-interview" class="button button-outline">Choose Mock Interview →</a>
         </article>
-        <article class="plan-card featured">
-          <p class="plan-no">02 / GUIDANCE</p>
+        <article class="plan-card">
+          <p class="plan-no">02 / SAME-DAY</p>
+          <h3>Same-Day Mock Interview</h3>
+          <p class="plan-summary">Need to practise today? Request a same-day slot, subject to interviewer availability.</p>
+          <ul>
+            <li>Realistic interview simulation</li>
+            <li>Structured feedback &amp; scorecard</li>
+            <li>Priority same-day scheduling</li>
+          </ul>
+          <p class="price">₹199 / session</p>
+          <a href="apply.html?session=same-day-mock" class="button button-light">Choose Same-Day Mock →</a>
+        </article>
+        <article class="plan-card">
+          <p class="plan-no">03 / HR PRACTICE</p>
+          <h3>HR Interview</h3>
+          <p class="plan-summary">Practise the people-focused questions that shape an HR round and get useful feedback.</p>
+          <ul>
+            <li>Common HR and behavioural questions</li>
+            <li>Practice explaining your experience and goals</li>
+            <li>Feedback on clarity and confidence</li>
+          </ul>
+          <p class="price">₹99 / session</p>
+          <a href="apply.html?session=hr-interview" class="button button-outline">Choose HR Interview →</a>
+        </article>
+        <article class="plan-card">
+          <p class="plan-no">04 / GUIDANCE</p>
           <h3>1:1 Guidance</h3>
           <p class="plan-summary">A deeper career conversation tailored to your story, strategy, and next move.</p>
           <ul>
@@ -162,7 +187,7 @@
             <li>Personalised preparation roadmap</li>
           </ul>
           <p class="price">₹49 / session</p>
-          <a href="apply.html" class="button button-light">Choose 1:1 Guidance →</a>
+          <a href="apply.html?session=guidance" class="button button-light">Choose 1:1 Guidance →</a>
         </article>
       </div>
     </section>
@@ -1025,10 +1050,51 @@
             </div>
             <div class="feedback-panelist"><span>Panel:</span> Ayush</div>
           </article>
+
+          <!-- Keshav -->
+          <article class="feedback-card">
+            <div class="feedback-card-top">
+              <div>
+                <h3 class="student-name">Keshav</h3>
+                <div class="student-meta">Mock Interview · Java, OOP &amp; SQL</div>
+              </div>
+              <div class="card-stars">★★★★★</div>
+            </div>
+            <p class="feedback-lead">“A smooth, supportive interview with detailed explanations and valuable insights.”</p>
+            <p class="feedback-body">“Today, I had my interview with Sankalp Barriar from the NextRound team, and it was a really great experience. The interview started with my self-introduction, followed by questions on Java fundamentals, OOP concepts, and SQL queries. The interviewer was very supportive, friendly, and approachable. At the end, he also provided detailed explanations and valuable insights, which made the experience even more enriching. Overall, it was a smooth, interactive, and insightful interview. A big thanks to Sankalp Bhaiya and the entire NextRound team for such a wonderful experience!”</p>
+            <div class="feedback-tags">
+              <span class="feedback-tag">Java Fundamentals</span>
+              <span class="feedback-tag">OOP &amp; SQL</span>
+              <span class="feedback-tag">Supportive Feedback</span>
+            </div>
+            <div class="feedback-panelist"><span>Panel:</span> Sankalp Barriar</div>
+          </article>
         </div>
 
         <div class="carousel-dots" id="carouselDots"></div>
       </div>
+    </section>
+
+    <section class="section faq-section" id="faq">
+      <p class="eyebrow">GOOD TO KNOW</p>
+      <div class="plans-heading">
+        <h2>Frequently asked<br><em>questions.</em></h2>
+        <p>Pricing, scheduling, payments, and rescheduling—before you book.</p>
+      </div>
+      <div class="faq-list">
+        <details><summary>What are the session prices?</summary><p>A standard mock interview is ₹129, an HR interview is ₹99, 1:1 guidance is ₹49, and a same-day mock interview request is ₹199.</p></details>
+        <details><summary>How does same-day scheduling work?</summary><p>Select the same-day mock interview option. The form automatically sets your preferred date to today. We will prioritize your application and do our best to schedule your mock interview on the same day.</p></details>
+        <details><summary>What happens in a 1:1 guidance session?</summary><p>It is a personal conversation focused on your career goals, applications, resume or LinkedIn, and preparation strategy. You can discuss your questions and leave with practical next steps tailored to you.</p></details>
+        <details><summary>What happens in an HR interview?</summary><p>The HR interview helps you practise common HR and behavioural questions, explain your background and goals, and receive feedback on how clearly and confidently you communicate. It costs ₹99 per session.</p></details>
+        <details><summary>What happens in a mock interview?</summary><p>We aim to create a professional environment that feels like a real interview. Your interviewer will ask role-relevant questions, discuss your experience and projects, and share constructive feedback to help you prepare for actual interviews.</p></details>
+        <details data-faq-extra hidden><summary>How long is an interview?</summary><p>Mock interviews typically last 1 to 1.5 hours.</p></details>
+        <details data-faq-extra hidden><summary>Will I get my preferred interview format?</summary><p>Your preferred format is a request. The final format will depend on our availability at that time, and we will confirm it with your schedule.</p></details>
+        <details data-faq-extra hidden><summary>When is my session confirmed?</summary><p>Your preferred date is a request. The team will confirm the final time and date after reviewing your application and payment proof.</p></details>
+        <details data-faq-extra hidden><summary>Can I request a reschedule?</summary><p>You may request a reschedule by contacting the NextRound team with your name and confirmed session details. Rescheduling is subject to availability.</p></details>
+        <details data-faq-extra hidden><summary>What should I do after paying?</summary><p>Submit the application form with your payment screenshot. We will review it and contact you to confirm the session details.</p></details>
+        <details data-faq-extra hidden><summary>Do I need to upload my resume?</summary><p>After successfully submitting your application, you can upload your updated resume in the confirmation pop-up.</p></details>
+      </div>
+      <button type="button" class="button button-outline faq-toggle" id="faqToggle" aria-expanded="false">Show all FAQs</button>
     </section>
 
     <section class="cta-strip">
@@ -1063,6 +1129,7 @@
       </a>
     </div>
     <a class="admin-link" href="/admin">Team login ↗</a>
+    <a class="button button-outline footer-top-link" href="#top" aria-label="Back to top" title="Back to top">↑</a>
   </footer>
 
   <div class="modal" id="adminModal">
@@ -1097,6 +1164,12 @@
             <button class="logout" id="logout">Log out</button>
           </div>
         </div>
+
+        <section class="admin-global-search" aria-label="Search the admin workspace">
+          <label for="adminGlobalSearchInput">Search all admin records</label>
+          <input id="adminGlobalSearchInput" type="search" placeholder="Search names, emails, dates, amounts, notes…" autocomplete="off">
+          <div id="adminGlobalSearchResults" class="admin-global-search-results" role="status" aria-live="polite" hidden></div>
+        </section>
 
         <!-- Workspace Tabs -->
         <div class="workspace-tabs">
@@ -1139,7 +1212,9 @@
                   <button type="button" class="filter-pill active" data-application-filter="All">All</button>
                   <button type="button" class="filter-pill" data-application-filter="mock-interview">Mock
                     Interviews</button>
+                  <button type="button" class="filter-pill" data-application-filter="same-day-mock">Same-Day</button>
                   <button type="button" class="filter-pill" data-application-filter="guidance">Guidance</button>
+                  <button type="button" class="filter-pill" data-application-filter="hr-interview">HR Interviews</button>
                 </div>
               </div>
             </div>
@@ -1201,6 +1276,17 @@
               <button class="button button-outline btn-sm" id="pastScheduleNext" type="button">Next</button>
             </div>
           </div>
+          <section class="dashboard-list resume-uploads-admin">
+            <div class="list-heading">
+              <div>
+                <h3>Resume uploads</h3>
+                <p class="import-note">Review submitted resumes and delete files when they are no longer needed</p>
+              </div>
+            </div>
+            <div id="resumeUploadAdminList" class="resume-upload-admin-list">
+              <p class="empty-state">Resume uploads will appear here.</p>
+            </div>
+          </section>
         </div>
 
         <!-- TAB 3: Finances & Settlements -->
@@ -1235,7 +1321,9 @@
             <div class="filter-pills" id="financeSessionPills">
               <button class="filter-pill active" data-session-filter="All">All sessions</button>
               <button class="filter-pill" data-session-filter="mock-interview">Mock Interviews</button>
+              <button class="filter-pill" data-session-filter="same-day-mock">Same-Day</button>
               <button class="filter-pill" data-session-filter="guidance">Guidance</button>
+              <button class="filter-pill" data-session-filter="hr-interview">HR Interviews</button>
             </div>
             <button type="button" class="button button-outline btn-sm finance-export-btn" id="exportFinanceBtn">Export
               CSV ↗</button>
@@ -1411,9 +1499,17 @@
             <input required type="text" name="date" id="recordDate" placeholder="DD.MM.YYYY">
           </label>
           <label>Amount settlement (₹)
-            <input required type="number" name="amount" id="recordAmount" value="79">
+            <input required type="number" name="amount" id="recordAmount" value="129">
           </label>
         </div>
+        <label>Session type
+          <select required name="sessionType" id="recordSessionType">
+            <option value="mock-interview">Mock interview</option>
+            <option value="same-day-mock">Same-day mock interview</option>
+            <option value="guidance">1:1 guidance</option>
+            <option value="hr-interview">HR interview</option>
+          </select>
+        </label>
         <label>Candidate Name
           <input required type="text" name="candidate" id="recordCandidate" placeholder="Candidate full name">
         </label>
@@ -1473,7 +1569,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="finance-data.js"></script>
   <script src="supabase-config.js?v=2"></script>
-  <script src="app.js?v=31"></script>
+  <script src="app.js?v=35"></script>
 </body>
 
 </html>

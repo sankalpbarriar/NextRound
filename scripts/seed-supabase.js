@@ -163,7 +163,7 @@ function buildFinance(rows) {
     interview_date: normalizeDate(row.date || row.interview_date || null),
     candidate: String(row.candidate || '').trim(),
     taken_by: row.takenBy || row.taken_by || 'Unknown',
-    amount: Number(row.amount ?? 79),
+    amount: Number(row.amount ?? 129),
     status: row.status || row.interviewStatus || 'Pending'
   })).filter((row) => row.candidate);
 }

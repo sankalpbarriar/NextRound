@@ -41,7 +41,7 @@
       <p>Fill this out once. Our team will review your response and confirm the final interview slot based on availability.</p>
       <div class="application-aside-note">
         <span>01</span>
-        <p>₹79 mock interview<br>Payment proof is required</p>
+        <p>Mock ₹129 · HR interview ₹99 · Same-day ₹199<br>1:1 guidance ₹49 · Payment proof required</p>
       </div>
       <div class="application-aside-note">
         <span>02</span>
@@ -65,7 +65,9 @@
         <h2>About <em>you.</em></h2>
         <label>What are you applying for?
           <select required name="sessionType" id="sessionType">
-            <option value="mock-interview" selected>Mock interview - ₹79</option>
+            <option value="mock-interview" selected>Mock interview - ₹129</option>
+            <option value="same-day-mock">Same-day mock interview - ₹199</option>
+            <option value="hr-interview">HR interview - ₹99</option>
             <option value="guidance">1:1 guidance session - ₹49</option>
           </select>
         </label>
@@ -126,7 +128,7 @@
 
         <h2 class="form-section-title">Your <em>session.</em></h2>
         <div class="field-row">
-          <label>Preferred date
+          <label data-preferred-date-field>Preferred date
             <input required type="date" name="preferredDate">
           </label>
           <label data-guidance-hide>Preferred interview format
@@ -145,10 +147,10 @@
         <div class="payment-card">
           <div class="payment-copy">
             <p class="eyebrow">PAYMENT</p>
-            <h3 id="paymentTitle">Mock interview<br><em>₹79</em></h3>
+            <h3 id="paymentTitle">Mock interview<br><em>₹129</em></h3>
             <p id="paymentDescription">Scan the official NextRound QR, make payment, then upload a screenshot below.</p>
           </div>
-          <img class="payment-qr" id="paymentQr" src="assets/nextround-payment-qr.png" alt="NextRound payment QR">
+          <img class="payment-qr" id="paymentQr" src="assets/standard%20mock%20129.png" alt="NextRound standard mock interview payment QR">
         </div>
 
         <label class="upload-field">Payment screenshot / proof
@@ -197,12 +199,25 @@
       <p class="eyebrow">APPLICATION RECEIVED</p>
       <h2>You’re on your<br><em>NextRound.</em></h2>
       <p>Thank you. The team will review your application, payment proof, and preferred date before confirming your session.</p>
+      <section id="resumeUploadSection" class="success-resume-upload" hidden>
+        <h3>Upload your updated resume</h3>
+        <p>This is optional. Add your latest resume now so the interviewer can review it before your session.</p>
+        <form id="resumeUploadForm">
+          <label for="resumeFile">Resume file</label>
+          <input id="resumeFile" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required>
+          <small>PDF, DOC, or DOCX · Maximum 10 MB</small>
+          <button class="button button-dark" id="resumeUploadButton" type="submit">Upload resume</button>
+        </form>
+        <p id="resumeUploadStatus" class="resume-upload-status" role="status" aria-live="polite"></p>
+        <button type="button" class="button button-outline" data-close="successModal">Skip for now</button>
+      </section>
       <a class="button button-dark" href="index.html">Back to site</a>
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="finance-data.js"></script>
   <script src="supabase-config.js?v=2"></script>
-  <script src="app.js?v=27"></script>
+  <script src="app.js?v=31"></script>
 </body>
 </html>
