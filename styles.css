@@ -2946,6 +2946,17 @@ body.admin-route .toast-container {
   border-color: var(--line);
 }
 
+:root[data-theme="dark"] .plan-grid > .plan-card:nth-child(2) .button-dark,
+:root[data-theme="dark"] .plan-grid > .plan-card:nth-child(4) .button-dark {
+  background: #344139;
+  color: var(--button-dark-fg);
+}
+
+:root[data-theme="dark"] .plan-grid > .plan-card:nth-child(2) .button-dark:hover,
+:root[data-theme="dark"] .plan-grid > .plan-card:nth-child(4) .button-dark:hover {
+  background: #46554a;
+}
+
 :root[data-theme="dark"] input,
 :root[data-theme="dark"] textarea,
 :root[data-theme="dark"] select {
