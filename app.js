@@ -866,7 +866,7 @@ function getSessionTypeLabel(value) {
 
 function getSessionAmount(value) {
   const type = normalizeSessionType(value);
-  return type === 'guidance' || type === 'hr-interview' ? (type === 'guidance' ? 49 : 99) : type === 'same-day-mock' ? 199 : 129;
+  return type === 'guidance' || type === 'hr-interview' ? (type === 'guidance' ? 49 : 99) : type === 'same-day-mock' ? 179 : 129;
 }
 
 function mapApplication(row) {
@@ -1743,19 +1743,19 @@ if (form) {
     const paymentQr = $('#paymentQr');
     const formTimeEstimate = $('#formTimeEstimate');
     if (formTimeEstimate) formTimeEstimate.textContent = isGuidance ? '~2 minutes' : '~5 minutes';
-    if (paymentTitle) paymentTitle.innerHTML = isGuidance ? '1:1 guidance<br><em>₹49</em>' : isHrInterview ? 'HR interview<br><em>₹99</em>' : isSameDay ? 'Same-day mock interview<br><em>₹199</em>' : 'Mock interview<br><em>₹129</em>';
+    if (paymentTitle) paymentTitle.innerHTML = isGuidance ? '1:1 guidance<br><em>₹49</em>' : isHrInterview ? 'HR interview<br><em>₹99</em>' : isSameDay ? 'Same-day mock interview<br><em>₹179</em>' : 'Mock interview<br><em>₹129</em>';
     if (paymentQr) {
       const qrBySession = {
         guidance: 'assets/1%20on%201%2049.png',
         'hr-interview': 'assets/HR%2099.png',
-        'same-day-mock': 'assets/same%20day%20199.png',
+        'same-day-mock': 'assets/same%20day%20179.png',
         'mock-interview': 'assets/standard%20mock%20129.png'
       };
       paymentQr.src = qrBySession[sessionType] || qrBySession['mock-interview'];
       paymentQr.alt = `NextRound ${getSessionTypeLabel(sessionType)} payment QR`;
     }
     if (paymentDescription) paymentDescription.textContent = isSameDay
-      ? 'Same-day slots depend on interviewer availability. Scan the official NextRound QR for ₹199, then upload your payment screenshot.'
+      ? 'Same-day slots depend on interviewer availability. Scan the official NextRound QR for ₹179, then upload your payment screenshot.'
       : 'Scan the official NextRound QR, make payment, then upload a screenshot below.';
   };
 
