@@ -1,0 +1,494 @@
+[
+  {
+    "name": "Ajay Singh Thakur",
+    "meta": "CSE · LNCTS",
+    "lead": "Two hours covering projects, DSA and core DBMS — followed by actionable feedback.",
+    "body": "A five-star experience with Avinash Bhaiya and Ayush Bhaiya. They interviewed me continuously for nearly two hours, covering everything on my resume — from a deep dive into all three of my projects and IdeaLab work, to challenging DSA, DBMS, Java, and MySQL questions. The question quality was excellent, followed by constructive feedback and time for all my doubts.",
+    "tags": [
+      "Projects & IdeaLab",
+      "DBMS & MySQL",
+      "DSA & Java"
+    ],
+    "panel": "Avinash & Ayush"
+  },
+  {
+    "name": "Namrata Digarse",
+    "meta": "CSE · LNCTE",
+    "lead": "They didn't just test theoretical knowledge — they tested conceptual depth.",
+    "body": "A really valuable experience with Avinash Bhaiya and Sankalp Bhaiya. The interview moved from project discussions and tech stack into DBMS, OOPs, and DSA problem-solving. What I liked most was that they didn't just test theoretical knowledge — they dug into how well I actually understood concepts, followed by clear feedback on my strong and weak areas.",
+    "tags": [
+      "Concept Depth",
+      "OOPs & DBMS",
+      "DSA Problem Solving"
+    ],
+    "panel": "Avinash & Sankalp"
+  },
+  {
+    "name": "Shreshthi",
+    "meta": "AIDS · LNCT · Infosys Placement",
+    "lead": "Questions from the mock were repeated in my actual Infosys technical interview.",
+    "body": "I attended two mock interviews. The first was with Sankalp and Ayush sir, which helped me immensely because multiple questions were directly repeated in my actual Infosys technical interview! My second mock with Avinash Sir took a deep dive into projects, Java/OOPs, and SQL queries, giving me a clear roadmap and much higher confidence.",
+    "tags": [
+      "Infosys Repeat Questions",
+      "Java & OOPs",
+      "SQL & Roadmap"
+    ],
+    "panel": "Sankalp, Ayush & Avinash"
+  },
+  {
+    "name": "Kaushik Vishwakarma",
+    "meta": "AIDS · LNCT",
+    "lead": "Beyond evaluating my interview, they took time to review and refine my resume.",
+    "body": "An exceptionally valuable mock interview session with Sankalp and Avinash. Beyond evaluating my performance and pinpointing specific areas for improvement, they took the time to review and help refine my resume. Their constructive feedback gave me clear direction, and their encouragement provided a real confidence boost.",
+    "tags": [
+      "Resume Refinement",
+      "Interview Direction",
+      "Confidence Boost"
+    ],
+    "panel": "Sankalp & Avinash"
+  },
+  {
+    "name": "Divya Prakash Dwivedi",
+    "meta": "ECE · IET-DAVV",
+    "lead": "A threaded interview that asked ‘why’ behind project decisions, just like a real tech round.",
+    "body": "Coming from IET-DAVV, this was an insightful, realistic mock with Avinash Sir. Rather than standard questions, the interview explored the architectural reasoning behind my project decisions — asking why I chose specific implementations and what happens internally. The threaded format felt just like an actual company interview.",
+    "tags": [
+      "Threaded Interview",
+      "Architectural Decisions",
+      "SQL & DBMS"
+    ],
+    "panel": "Avinash"
+  },
+  {
+    "name": "Abhinav Jain",
+    "meta": "AIML · LNCT",
+    "lead": "Intelligent follow-ups and honest feedback gave me a clear preparation direction.",
+    "body": "A really solid mock interview experience with Avinash Bhaiya. He asked questions around my projects, OOPs, SQL, DSA, and other core technical concepts, with intelligent follow-ups based directly on my answers. The feedback was honest and helped me understand how to approach actual interviews with confidence.",
+    "tags": [
+      "Intelligent Follow-ups",
+      "OOPs, SQL & DSA",
+      "Interview Approach"
+    ],
+    "panel": "Avinash"
+  },
+  {
+    "name": "Ramansh Yadav",
+    "meta": "TCS Mock Session",
+    "lead": "Structured and professional — closely resembled an actual TCS interview.",
+    "body": "Avinash Bhaiya conducted my 1:1 TCS mock in a very structured and professional manner. He patiently listened, identified my mistakes, and explained how to fix them. He also helped optimize my resume and shared tips on communication and interview etiquette. His friendly and encouraging nature made me comfortable while still challenging me to perform my best.",
+    "tags": [
+      "TCS Mock Interview",
+      "Resume Optimization",
+      "Communication Tips"
+    ],
+    "panel": "Avinash"
+  },
+  {
+    "name": "Pranjal Srivastava",
+    "meta": "TCS Mock Session",
+    "lead": "Reduced my interview anxiety and boosted my confidence before the real thing.",
+    "body": "A really helpful TCS mock on NextRound. Avinash Bhaiya and Sankalp Bhaiya created an environment very close to the actual TCS interview, giving honest feedback on my answers, resume, and communication. The best part — it genuinely helped reduce my interview anxiety and boosted my confidence. I now know exactly how to approach different questions more effectively.",
+    "tags": [
+      "Anxiety Reduction",
+      "Confidence Boost",
+      "TCS Preparation"
+    ],
+    "panel": "Avinash & Sankalp"
+  },
+  {
+    "name": "Ritul Jain",
+    "meta": "Placement Prep",
+    "lead": "Started nervous — ended confident. A must-try before real placement interviews.",
+    "body": "A great learning experience. I was quite nervous at the beginning, but as the interview progressed I became more comfortable and answered with confidence. The feedback helped me identify my strengths and the areas where I need to improve. I genuinely recommend everyone to participate — it's an excellent way to build confidence and prepare for real placement interviews.",
+    "tags": [
+      "Confidence Building",
+      "Placement Prep",
+      "Strengths & Gaps"
+    ],
+    "panel": "Avinash & Sankalp"
+  },
+  {
+    "name": "Ramansh Yadav",
+    "meta": "2nd Session · OOPs & DBMS",
+    "lead": "Detailed analysis, insightful interview tips and a clear picture of my strengths.",
+    "body": "My second mock with Avinash Bhaiya and Ayush Bhaiya was very well-structured with quality questions covering OOPs, DBMS, Java, and coding. The detailed analysis and feedback at the end were very insightful — helping me understand both my strengths and areas to improve. They also shared useful interview tips and tricks that will definitely help in upcoming interviews.",
+    "tags": [
+      "OOPs & DBMS",
+      "Interview Tips",
+      "Detailed Feedback"
+    ],
+    "panel": "Avinash & Ayush"
+  },
+  {
+    "name": "Sourabh Patel",
+    "meta": "DSA Focus · 1.5h Session",
+    "lead": "Honest detailed feedback + a proper improvement roadmap in a 1.5-hour professional session.",
+    "body": "A really great experience with Avinash Bhaiya and Shashank Bhaiya. The 1.5-hour session was very professional — starting with DSA to teach me how to handle nervousness and pressure, then going in-depth on resume, projects, and fundamentals with follow-up questions. The most valuable part was the honest, detailed feedback and a proper roadmap covering everything from my intro to communication to technical concepts.",
+    "tags": [
+      "DSA & Nervousness",
+      "Resume & Projects",
+      "Improvement Roadmap"
+    ],
+    "panel": "Avinash & Shashank"
+  },
+  {
+    "name": "Nishtha",
+    "meta": "First Mock Session",
+    "lead": "Interactive and attentive — covered how my intro should be and how to frame answers properly.",
+    "body": "My first mock interview with NextRound was an amazing experience, taken by Avinash Bhaiya. He was very interactive and attentive to my mistakes. He covered all the basics in detail — how my introduction should be and how I should frame my answers properly. It really helped me understand my weak points and gave me a clear idea of what to improve. Highly recommend to anyone preparing for interviews!",
+    "tags": [
+      "Introduction Coaching",
+      "Answer Framing",
+      "Weak Point Clarity"
+    ],
+    "panel": "Avinash"
+  },
+  {
+    "name": "Aarya Gupta",
+    "meta": "On 20th September (Sunday)",
+    "lead": "A great experience with detailed feedback that exposed where I actually needed to improve.",
+    "body": "On 20th September (Sunday), I was interviewed by Avinash and Sankalp Bhaiya. The interview started with a brief introduction about me. I was then asked to solve a DSA problem on LeetCode based on HashMap and Prefix Sum. After that, I was asked some questions related to my projects and Spring Boot concepts. Some trickier questions on Strings and OOPs followed, along with a DBMS query. I was also asked to solve another DSA problem on LeetCode, followed by questions on the internal implementation of HashMap. Overall, it was a great experience. At the end, I was given detailed feedback highlighting my strengths and weaknesses. I genuinely found the feedback very insightful, as it helped me identify my actual weaknesses and understand the topics I need to improve on. It was a really valuable experience, and I’m grateful for the detailed and honest feedback.",
+    "tags": [
+      "HashMap & Prefix Sum",
+      "Spring Boot",
+      "Strings & OOPs"
+    ],
+    "panel": "Avinash & Sankalp"
+  },
+  {
+    "name": "Shreya Pathak",
+    "meta": "Practical interview prep",
+    "lead": "Very practical, insightful, and helpful — it changed how I approach technical interviews.",
+    "body": "Yesterday, I had a mock interview with Avinash Bhaiya, and it was an amazing learning experience. He started by deep-diving into my projects and then covered basic yet very unique concepts of OOPs and Java. The coding problems he gave me to solve on the IDE were mainly focused on testing my practical and foundational knowledge rather than just theoretical understanding. He also asked one DSA and two SQL questions, followed by some important DBMS concepts. Towards the end, he discussed my strengths and weaknesses and gave me valuable guidance on what to speak, where to elaborate, and where to keep my answers concise. Overall, the interview was very practical, insightful, and helpful. It gave me a much better understanding of how to approach technical interviews and how to present my knowledge effectively.",
+    "tags": [
+      "Projects & OOPs",
+      "Java & SQL",
+      "DBMS & Guidance"
+    ],
+    "panel": "Avinash"
+  },
+  {
+    "name": "Sourabh Patel",
+    "meta": "7th Semester · CSE · LNCTS",
+    "lead": "A valuable frontend interview that built confidence and made complex concepts clearer.",
+    "body": "I recently had a mock interview with Shashank Bhaiya, and it was a really valuable experience for me. The interview started with my self-introduction, followed by in-depth questions related to web development and frontend concepts. Some of the topics discussed were Local Storage vs. Session Storage, how to store and manage mock data on the frontend, frontend development concepts, Lighthouse and website performance, and general development and industry-related questions. What I really liked about the interview was that it was not just about answering questions. Shashank Bhaiya also explained the concepts, gave the right feedback, and shared useful information about how things actually work in the software industry. This mock interview gave me a lot of motivation and confidence. It also helped me understand the areas where I need to improve and the depth at which I should prepare development concepts for interviews. Thank you so much, Shashank Bhaiya, for taking the time to conduct the mock interview and for providing such valuable guidance and feedback. It was a great learning experience for me.",
+    "tags": [
+      "Frontend Concepts",
+      "Web Performance",
+      "Interview Guidance"
+    ],
+    "panel": "Shashank"
+  },
+  {
+    "name": "Prachi Soni",
+    "meta": "7th Semester · CSE · Mock Interview",
+    "lead": "A great experience that helped me identify the areas I need to improve.",
+    "body": "On 27th September, I had my interview with Sankalp Bhaiya. He started with my introduction, followed by two DSA questions that I had to solve. Then, he asked me a few questions related to Java, followed by a detailed discussion about my projects. He also asked questions about JWT authentication and the overall flow of my project. After that, I was asked to solve some SQL queries, followed by output-based questions on OOP concepts and some theoretical OOP questions. Overall, it was a really great experience and I gained a lot of confidence from the interview. At the end, he gave me detailed feedback and pointed out the areas where I could improve. We also discussed the questions that were asked during the interview. It was a very honest and constructive feedback session, which actually helped me realize the areas I need to work on and improve. Overall, it was a really valuable . Thank you so Sankalp Bhaiya, for your time, guidance, and honest feedback.",
+    "tags": [
+      "DSA & Java",
+      "JWT",
+      "OOP & SQL"
+    ],
+    "panel": "Sankalp"
+  },
+  {
+    "name": "Surabhi Swami",
+    "meta": "Interview · 30 September 2026",
+    "lead": "Detailed, honest feedback and encouragement made this a valuable confidence-building experience.",
+    "body": "On 30th September, I had my interview with Avinash Bhaiya. It started with my introduction and a detailed discussion about my project, including whether I was actively using it. We then discussed JWT, REST APIs, and Spring Boot in depth, followed by a DSA problem, an SQL query, OOP concepts and method overloading, DBMS transactions, and the internal working of HashMap. It was a great and valuable experience. Avinash Bhaiya motivated me throughout and gave me detailed, honest feedback about my strengths and the areas I should improve. The feedback gave me a clearer understanding of where I stand and what to focus on next. Thank you for your time, guidance, motivation, and valuable feedback.",
+    "tags": [
+      "JWT & Spring Boot",
+      "DSA & SQL",
+      "OOPs & DBMS"
+    ],
+    "panel": "Avinash"
+  },
+  {
+    "name": "Ajay Singh Thakur",
+    "meta": "Third Interview · Project Deep Dive",
+    "lead": "A challenging, detailed interview with valuable feedback on exactly where to improve.",
+    "body": "My third interview at NextRound with Avinash Bhaiya was a roller coaster: some parts felt easy, while others challenged me. We started with my introduction and a deep dive into the RAG pipeline and full project architecture. Since I had built the project myself, I felt confident explaining it. OOP questions followed; I ran into an error while coding polymorphism and couldn't explain the cause, but I answered the remaining OOP questions. I couldn't solve the first DSA problem, which was based on DP, but I solved the second one on Binary Search. DBMS and MySQL questions helped me regain confidence. The interview covered almost everything on my resume, and Avinash Bhaiya's valuable, honest feedback showed me where I can improve. Thank you for the opportunity, guidance, and feedback.",
+    "tags": [
+      "RAG & Architecture",
+      "OOPs & DSA",
+      "DBMS & MySQL"
+    ],
+    "panel": "Avinash"
+  },
+  {
+    "name": "Sonam Sinha",
+    "meta": "Interview · 3 October 2026",
+    "lead": "A really good learning experience with honest, clear feedback and practical improvement guidance.",
+    "body": "Today, I had my interview with Sankalp Bhaiya. The interview started with my introduction, followed by one DSA question that I was asked to solve. We discussed the approach, logic, and different aspects of the problem in detail. After that, we had a detailed discussion about my project. Then, he asked me several questions related to OOPs, including method overloading, method overriding, and static methods, along with their implementation and concepts. After that, he asked me to write an SQL query and discussed some important DBMS concepts, including ACID properties and transactions. Overall, the interview experience was really great and valuable. We discussed each topic properly, and Sankalp Bhaiya explained things very clearly wherever I was confused or needed more clarity. The best part was the feedback I received at the end. He clearly explained what I need to improve, which concepts I should focus on more, and where I currently need to put in more effort. His honest feedback gave me a much better understanding of my preparation. It was a really good learning experience for me, and I genuinely enjoyed the whole discussion. Thank you so much, Sankalp Bhaiya, for your time, guidance, motivation, and for helping me understand how I can improve myself further.",
+    "tags": [
+      "DSA & Projects",
+      "OOPs & SQL",
+      "DBMS & Feedback"
+    ],
+    "panel": "Sankalp"
+  },
+  {
+    "name": "Surabhi Swami",
+    "meta": "Second Interview · 16 October",
+    "lead": "A great learning experience that helped me identify the areas I need to improve.",
+    "body": "On 16th October, I had my second interview with Shashank Bhaiya. We covered React, basic Java, Strings, the static keyword, and HashMap, along with two DSA questions. He also asked why I chose software development despite coming from an Electrical Engineering background. Overall, it was a great learning experience that helped me identify the areas I need to improve. Thank you so much, Shashank Bhaiya, for your time and guidance.",
+    "tags": [
+      "React & Java",
+      "DSA",
+      "Career Direction"
+    ],
+    "panel": "Shashank"
+  },
+  {
+    "name": "Suyash Daharwal",
+    "meta": "Mock Interview · Project Deep Dive",
+    "lead": "The feedback helped me understand what to focus on for upcoming interviews.",
+    "body": "Today, I had a mock interview with Avinash Bhaiya. We started with an introduction and a deep dive into my project and its workflow, then covered two DSA questions, two SQL queries, and core CS concepts. At the end, I received feedback on the areas I need to improve and the sections I should focus on more. It was a good learning experience and helped me prepare better for upcoming interviews.",
+    "tags": [
+      "Project Discussion",
+      "DSA & SQL",
+      "Core CS"
+    ],
+    "panel": "Avinash"
+  },
+  {
+    "name": "Mahak Rajput",
+    "meta": "Second Interview · DSA & Core Concepts",
+    "lead": "Two interviews, meaningful feedback, and a unique DSA challenge helped me make real progress.",
+    "body": "My interview experience with NextRound has been really good so far. This was my second interview, and I had a very positive experience with both. My first interview with Sankalp Bhaiya and Shashank Bhaiya was very helpful. They identified the areas I needed to improve and gave me valuable feedback. I worked on those points, which helped me perform better in my next interview. Today, I had my second interview with Avinash Bhaiya, and it was another great learning experience. He covered a wide range of topics, including self-introduction, project discussion, core subjects, and important technical concepts. He also focused on critical topics where students commonly face difficulties, helping me understand where I still need to improve. One of the best parts was the DSA problem. It was unique and tested my problem-solving and logical thinking rather than just whether I already knew the solution, which made it challenging and valuable. Overall, the NextRound interview process has been an excellent learning experience. The interviewers are supportive, the questions are meaningful, and the feedback clearly highlights areas for improvement. I’m thankful to Sankalp Bhaiya, Shashank Bhaiya, and Avinash Bhaiya for their time, guidance, and constructive feedback.",
+    "tags": [
+      "Progress Across Interviews",
+      "Problem-Solving & DSA",
+      "Constructive Feedback"
+    ],
+    "panel": "Sankalp, Shashank & Avinash"
+  },
+  {
+    "name": "Sakshi Thorat",
+    "meta": "Mock Interview · Preparation Guidance",
+    "lead": "They made me feel comfortable and helped me understand how to prepare with confidence.",
+    "body": "I had my interview with Avinash Bhaiya and Sankalp Bhaiya. We started with my introduction, followed by a DSA question and an SQL query, and discussed the topics on my resume one by one. They guided me on what to focus on, how to answer confidently, and how to handle questions when I don't know an answer. They made me feel comfortable throughout and helped me understand my strengths and areas to improve. It was a really helpful and insightful experience.",
+    "tags": [
+      "DSA & SQL",
+      "Confidence",
+      "Preparation Guidance"
+    ],
+    "panel": "Avinash & Sankalp"
+  },
+  {
+    "name": "Saurav Kumar",
+    "meta": "Mock Interview · Constructive Feedback",
+    "lead": "The feedback helped me understand my weak areas and how I can improve.",
+    "body": "Today, I had my interview with Sankalp Bhaiya. It began with my introduction, followed by a DSA question, a detailed project discussion, OOPs questions, and an SQL question. The feedback session was especially helpful: he guided me on improving my communication, handling questions when I don't know or can't recall an answer, and choosing topics to focus on. It was a great learning experience. Thank you to Sankalp Bhaiya and the NextRound team for the guidance and support.",
+    "tags": [
+      "Projects & DSA",
+      "OOPs & SQL",
+      "Communication"
+    ],
+    "panel": "Sankalp"
+  },
+  {
+    "name": "Sarthak Dubey",
+    "meta": "Technical Mock Interview",
+    "lead": "Honest, constructive feedback gave me a clear direction for improvement.",
+    "body": "I recently had a technical mock interview on NextRound with Avinash Bhaiya. The interview covered almost every aspect of my resume, and the feedback was especially valuable. He clearly explained my strengths and the areas I need to improve, particularly OOPs, DSA, and SQL. The experience helped me understand my preparation level, identify gaps, and get a clear direction for improvement. I would highly recommend making the most of this opportunity.",
+    "tags": [
+      "OOPs & DSA",
+      "SQL",
+      "Actionable Feedback"
+    ],
+    "panel": "Avinash"
+  },
+  {
+    "name": "Ritika Rathi",
+    "meta": "Mock Interview · Java & Core CS",
+    "lead": "The session helped me identify my weak areas and gave me a clearer direction.",
+    "body": "Today, I had my interview with Avinash Bhaiya. We covered two DSA questions, a detailed discussion about my projects, and questions on Java concepts, OOPs, DBMS, and SQL. In the feedback session, he explained the areas I need to work on and guided me on improving my communication skills. It was a great learning experience that helped me identify my weak areas and gave me a clearer direction for improvement.",
+    "tags": [
+      "Java & OOPs",
+      "DSA & SQL",
+      "Communication"
+    ],
+    "panel": "Avinash"
+  },
+  {
+    "name": "Ajay Singh Thakur",
+    "meta": "Another Mock Interview · Core Java",
+    "lead": "The interview went better than I expected, and the feedback showed me where to improve.",
+    "body": "I attended another mock interview conducted by Sankalp Bhaiya. We discussed Core Java, JDK, JVM, polymorphism, and other conceptual questions. I also solved coding problems involving moving zeroes to the end of an array and implementing a circular linked list. The session covered GitHub and advanced Java concepts too. I handled nearly 95% of the questions confidently, though method hiding and runtime polymorphism challenged me. The interview went much better than I expected, and I received constructive feedback to help me prepare for future interviews.",
+    "tags": [
+      "Core & Advanced Java",
+      "Data Structures",
+      "Polymorphism"
+    ],
+    "panel": "Sankalp"
+  },
+  {
+    "name": "Om Patel",
+    "meta": "Sixth Interview · Java & AI",
+    "lead": "I can see how much I’ve improved in confidence and communication over multiple interviews.",
+    "body": "I’m sharing my experience from my sixth interview with NextRound. This time, Avinash Bhaiya and I discussed DBMS normalization, AI, LLMs, SQL queries, Java, errors and exceptions, and how LLMs work, along with a detailed discussion about my projects. I’ve noticed how much I’ve improved since my earlier interviews: my confidence has grown, I’m getting better at answering when my mind goes blank, and my communication has improved. Thanks to Avinash Bhaiya and the NextRound team for helping me improve with every attempt.",
+    "tags": [
+      "Java & DBMS",
+      "AI & LLMs",
+      "Growing Confidence"
+    ],
+    "panel": "Avinash"
+  },
+  {
+    "name": "Surabhi Swami",
+    "meta": "Interview · 25 October",
+    "lead": "Patient explanations made the topics and implementation much clearer.",
+    "body": "On 25 October, I had my interview with Sankalp Bhaiya. He reviewed my project and asked detailed questions about its implementation, middleware, JWT authentication, Java, and OOPs. I also solved a DSA question and three SQL queries, and answered questions about sorting algorithms. It was a valuable learning experience. Sankalp Bhaiya explained the code and implementation thoroughly and patiently, which helped me understand the topics much better. Thank you for your time and guidance.",
+    "tags": [
+      "Project & JWT",
+      "Java & OOPs",
+      "DSA & SQL"
+    ],
+    "panel": "Sankalp"
+  },
+  {
+    "name": "Sakshi Sahu",
+    "meta": "First Mock Interview · Interview Guidance",
+    "lead": "I was nervous at first, but the interviewer made me comfortable and motivated.",
+    "body": "Since it was my very first mock interview, I was quite nervous at first. Shashank Bhaiya immediately made me feel comfortable and started with the basics, which kept my motivation high. His guidance and feedback acted like a mirror, helping me clearly see my weak areas and where I need to put in more work. Thank you so much for your patience, encouragement, and mentorship.",
+    "tags": [
+      "First Interview",
+      "Confidence",
+      "Mentorship"
+    ],
+    "panel": "Shashank"
+  },
+  {
+    "name": "Om Patel",
+    "meta": "Fourth Interview · Web Development & DSA",
+    "lead": "Each interview helps me improve, stay calm, and understand where to focus next.",
+    "body": "Hey everyone! This was my fourth interview. My interviewer today was Avinash Bhaiya. We covered a lot of topics, including web development, DSA, AI basics, SQL, Core Java, OOPs, and my projects. Overall, the experience was great and felt just like the real thing. I learned where I need to improve and stayed calm throughout, so I’m definitely getting better at managing my nerves. This helped me a lot. Thanks, NextRound.",
+    "tags": [
+      "Web Development & DSA",
+      "Java, OOPs & SQL",
+      "Building Confidence"
+    ],
+    "panel": "Avinash"
+  },
+  {
+    "name": "Om Patel",
+    "meta": "Interview · 17 September · Java & Projects",
+    "lead": "A well-rounded interview covering technical depth, projects, DSA, and real-world team situations.",
+    "body": "I had an interview on 17 September with Ayush Gupta Bhaiya. It was a good mix of technical, project-based, DSA, and behavioural questions. We started with my self-introduction, followed by a detailed project deep dive covering my contribution, technical decisions, and the challenges I faced. Then we discussed OOPs, including abstraction versus encapsulation, polymorphism in depth, and related Java concepts with practical examples. The behavioural round included scenario-based questions about handling conflict between teammates, disagreements, and taking on additional work when a team member leaves. There was also a DSA question, where we discussed the approach and solution, followed by Java fundamentals. Overall, the interview focused on my technical knowledge, understanding of my projects, problem-solving, communication, and how I handle real-world team situations.",
+    "tags": [
+      "Projects & Java",
+      "OOPs & DSA",
+      "Behavioural Questions"
+    ],
+    "panel": "Ayush"
+  },
+  {
+    "name": "Ishan Rai",
+    "meta": "1.5-Hour Mock · Projects, DSA & Fundamentals",
+    "lead": "Honest feedback and a clear topic-by-topic improvement plan made this a valuable learning experience.",
+    "body": "I recently had a mock interview with Avinash Bhaiya, and it was a really great experience. The interview lasted around 1.5 hours. He started with questions about my projects, which helped me understand how to handle nervousness and pressure and how to explain my project’s flow. He asked in-depth questions based on my resume, DSA, and fundamentals, with follow-ups to identify my weak areas. What I liked most was the honest, detailed feedback on everything—from my introduction and communication to DSA and technical concepts. He also provided a list of topics to improve, giving me a clear idea of what to work on next. Overall, it was a very valuable learning experience. Thank you so much, Avinash Bhaiya.",
+    "tags": [
+      "Projects & Resume",
+      "DSA & Fundamentals",
+      "Clear Improvement Plan"
+    ],
+    "panel": "Avinash"
+  },
+  {
+    "name": "Neha Tiwari",
+    "meta": "Mock Interview · DSA, Projects & OOPs",
+    "lead": "Clear, constructive feedback helped me understand where to focus and gave me confidence.",
+    "body": "Today, I had my interview with Sankalp Bhaiya and Avinash Bhaiya. It started with my introduction, followed by two DSA questions where I missed a few minor points. After a detailed project discussion, I answered questions about OOPs and tried an SQL query that I got stuck on. The best part was the feedback at the end: he clearly explained what I need to improve, which concepts to focus on, and where I should put in more effort. It was a really good learning experience and gave me confidence. Thank you so much, NextRound team.",
+    "tags": [
+      "DSA & Projects",
+      "OOPs & SQL",
+      "Actionable Feedback"
+    ],
+    "panel": "Sankalp & Avinash"
+  },
+  {
+    "name": "Priyanshu Sarathe",
+    "meta": "Mock Interview · CS Fundamentals & Problem Solving",
+    "lead": "A challenging, supportive interview helped me identify my weak areas and understand what to improve.",
+    "body": "Today, I had an amazing interview experience with Avinash Bhaiya. It started with my introduction, followed by a problem-solving round with two questions; I was able to solve half of them. We discussed my project, its workflow, and the technologies I used, followed by two SQL queries. I could write one but struggled with the second, even after a hint. The interviewer also tested my CS fundamentals in depth, especially OOPs and DBMS, and gave me pseudocode to trace. I felt anxious at first, particularly during my introduction, but the feedback at the end helped me identify my weak areas and understand exactly where I need to improve. Overall, it was an amazing learning experience that gave me a clearer picture of my preparation and what to work on. Thank you, NextRound, for providing this opportunity.",
+    "tags": [
+      "OOPs & DBMS",
+      "SQL & Problem Solving",
+      "Preparation Feedback"
+    ],
+    "panel": "Avinash"
+  },
+  {
+    "name": "Akshat Tahalani",
+    "meta": "Mock Interview",
+    "lead": "A realistic, professional interview that revealed 5–6 things I didn’t know I needed to improve.",
+    "body": "Today I had a mock interview with Ayush Bhaiya, and it was genuinely a great experience. Even though I’ve been practising a lot with ChatGPT and other AI tools, he gave me a completely different perspective on things I hadn’t thought of before. The interview felt just like a real one, and his professionalism was amazing. His feedback helped me identify 5–6 things I didn’t even realise I needed to improve. Really grateful to him for his time and guidance!",
+    "tags": [
+      "Realistic Interview",
+      "Actionable Feedback",
+      "Professional Guidance"
+    ],
+    "panel": "Ayush"
+  },
+  {
+    "name": "Ishan Jain",
+    "meta": "Mock Interview · Constructive Feedback & Preparation Plan",
+    "lead": "Genuine, constructive feedback gave me a clear roadmap for what to practice next.",
+    "body": "I had a really positive interview experience with Ayush Bhaiya. What made it valuable was the genuine and constructive feedback I received. I got a clear understanding of my strengths, where I’m lacking, and which areas need improvement. More importantly, I now have a roadmap for the next few days, with clear direction on what to focus on, how to practice, and how to work on my weaker areas. Overall, it was a really helpful experience.",
+    "tags": [
+      "Constructive Feedback",
+      "Strengths & Growth Areas",
+      "Clear Preparation Plan"
+    ],
+    "panel": "Ayush"
+  },
+  {
+    "name": "Keshav",
+    "meta": "Mock Interview · Java, OOP & SQL",
+    "lead": "A smooth, supportive interview with detailed explanations and valuable insights.",
+    "body": "Today, I had my interview with Sankalp Bhaiya from the NextRound team, and it was a really great experience. The interview started with my self-introduction, followed by questions on Java fundamentals, OOP concepts, and SQL queries. The interviewer was very supportive, friendly, and approachable. At the end, he also provided detailed explanations and valuable insights, which made the experience even more enriching. Overall, it was a smooth, interactive, and insightful interview. A big thanks to Sankalp Bhaiya and the entire NextRound team for such a wonderful experience!",
+    "tags": [
+      "Java Fundamentals",
+      "OOP & SQL",
+      "Supportive Feedback"
+    ],
+    "panel": "Sankalp"
+  },
+  {
+    "name": "Mukul Namdev",
+    "meta": "Mock Interview · Technical & Core CS",
+    "lead": "A professional, supportive interview that exposed my weaknesses and gave me a clear improvement direction.",
+    "body": "I attended my mock interview on NextRound, conducted by Avinash Bhaiya. The interview started with deep project-related discussions and some in-depth technical questions. We also discussed data structures and algorithms and important concepts of OOPs, DBMS and core Python. It was a great experience. It helped me find my weaknesses, and Avinash Bhaiya explained which parts I need to improve. Overall, they were very supportive and interactive, and the interview was quite professional and meaningful.",
+    "tags": [
+      "Projects & Technical Questions",
+      "DSA & Core Python",
+      "OOPs & DBMS"
+    ],
+    "panel": "Avinash"
+  },
+  {
+    "name": "Piyush Galphat",
+    "meta": "Mock Interview · DSA, Python & SQL",
+    "lead": "A smooth, interactive interview with detailed explanations and valuable insights.",
+    "body": "Today, I had my interview with Sankalp Bhaiya from the NextRound team, and it was a really great experience. The interview started with my self-introduction, followed by questions on DSA, Python fundamentals, OOP concepts, and SQL queries. The interviewer was very supportive, friendly, and approachable. At the end, he also provided detailed explanations and valuable insights, which made the experience even more enriching. Overall, it was a smooth, interactive, and insightful interview. A big thanks to Sankalp Bhaiya and the entire NextRound team for such a wonderful experience!",
+    "tags": [
+      "DSA & Python",
+      "OOPs & SQL",
+      "Detailed Feedback"
+    ],
+    "panel": "Sankalp"
+  },
+  {
+    "name": "Sourabh Patel",
+    "meta": "Mock Interview · DSA, Projects & Operating Systems",
+    "lead": "A great learning experience that strengthened my technical knowledge, confidence, and communication.",
+    "body": "Yesterday, I attended my mock interview on NextRound, conducted by Avinash Bhaiya. The interview started with DSA questions, followed by project-related discussions and some in-depth technical questions. We also discussed SQL queries and important Operating System concepts and commands. It was a great learning experience that helped me identify my strengths and areas where I need to improve. It also helped me work on my communication skills, technical knowledge, and confidence. I'm really grateful to NextRound and Avinash Bhaiya for providing such a great platform to practice, learn, and improve with every interview.",
+    "tags": [
+      "DSA & Projects",
+      "SQL & Operating Systems",
+      "Communication & Confidence"
+    ],
+    "panel": "Avinash"
+  }
+]

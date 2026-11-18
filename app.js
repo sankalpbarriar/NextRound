@@ -2656,10 +2656,67 @@ function showFeedbackEntry(card, offset) {
   updateFeedbackEntryControls(card);
 }
 
-function initFeedbackCarousel() {
+async function loadFeedbackData(track) {
+  try {
+    const response = await fetch(`feedback.json?v=${Date.now()}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`Could not load feedback (${response.status})`);
+    const feedbackEntries = await response.json();
+    if (!Array.isArray(feedbackEntries)) throw new Error('Feedback data has an invalid format');
+
+    feedbackEntries.forEach((feedback) => {
+      const card = document.createElement('article');
+      card.className = 'feedback-card';
+
+      const top = document.createElement('div');
+      top.className = 'feedback-card-top';
+      const identity = document.createElement('div');
+      const name = document.createElement('h3');
+      name.className = 'student-name';
+      name.textContent = feedback.name || '';
+      const meta = document.createElement('div');
+      meta.className = 'student-meta';
+      meta.textContent = feedback.meta || '';
+      identity.append(name, meta);
+      const stars = document.createElement('div');
+      stars.className = 'card-stars';
+      stars.textContent = '★★★★★';
+      top.append(identity, stars);
+
+      const lead = document.createElement('p');
+      lead.className = 'feedback-lead';
+      lead.textContent = feedback.lead ? `“${feedback.lead}”` : '';
+      const body = document.createElement('p');
+      body.className = 'feedback-body';
+      body.textContent = feedback.body ? `“${feedback.body}”` : '';
+
+      const tags = document.createElement('div');
+      tags.className = 'feedback-tags';
+      (Array.isArray(feedback.tags) ? feedback.tags : []).forEach((tagText) => {
+        const tag = document.createElement('span');
+        tag.className = 'feedback-tag';
+        tag.textContent = tagText;
+        tags.append(tag);
+      });
+
+      const panel = document.createElement('div');
+      panel.className = 'feedback-panelist';
+      const panelLabel = document.createElement('span');
+      panelLabel.textContent = 'Panel:';
+      panel.append(panelLabel, document.createTextNode(` ${feedback.panel || ''}`));
+
+      card.append(top, lead, body, tags, panel);
+      track.append(card);
+    });
+  } catch (error) {
+    console.error('Unable to render feedback carousel.', error);
+  }
+}
+
+async function initFeedbackCarousel() {
   const track = document.getElementById('feedbackTrack');
   if (!track) return;
 
+  await loadFeedbackData(track);
   groupFeedbackByStudent(track);
 
   const prevBtn = document.getElementById('prevFeedback');
